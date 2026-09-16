@@ -5,10 +5,13 @@
 使用以下脚本设置开机启动
 
 #install-ssh-autostart-fix.sh
+
 用法：
+
   bash install-ssh-autostart-fix.sh [小米智能存储IP]
 
 示例：
+
   bash install-ssh-autostart-fix.sh 10.31.0.66
 
 请先运行开启 SSH 的脚本，确认可以使用 root 密钥登录设备。

@@ -3,4 +3,5 @@
 
 使用以下脚本设置开机启动
 #install-ssh-autostart-fix.sh
+
 bash install-ssh-autostart-fix.sh 192.168.1.100

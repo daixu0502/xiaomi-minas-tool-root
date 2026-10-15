@@ -1,3 +1,7 @@
+/dist/
+/offline/
 __pycache__/
 *.py[cod]
+.cache/
 .test-cache/
+.pytest_cache/

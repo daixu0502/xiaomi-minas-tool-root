@@ -33,10 +33,13 @@ class BootstrapTests(unittest.TestCase):
             self.assertEqual(tf.extractfile('recovery.pub').read(),b'ssh-ed25519 fixture\n')
     def test_generated_single_file_bundle_matches_reviewed_sources(self):
         script=(ROOT/'xiaomi-storage-open-ssh-wsl.sh').read_text()
-        encoded=script.split("<<'NAS_SSH_CLIENT_BUNDLE' | tar -xz -C \"$stage\"\n",1)[1].split('\nNAS_SSH_CLIENT_BUNDLE')[0]
-        with tarfile.open(fileobj=io.BytesIO(base64.b64decode(encoded))) as tf:
-            for name in ['open_ssh_client.py','recover-ssh.py','restore-ssh.sh']:
-                self.assertEqual(tf.extractfile(name).read(),(ROOT/name).read_bytes())
+        self.assertNotIn('NAS_SSH_CLIENT_BUNDLE',script)
+        for name,marker in [('open_ssh_client.py','MINAS_SSH_CLIENT_PY_SOURCE'),
+                            ('recover-ssh.py','MINAS_SSH_RECOVERY_PY_SOURCE'),
+                            ('restore-ssh.sh','MINAS_SSH_RESTORE_SH_SOURCE')]:
+            with self.subTest(source=name):
+                source=script.split("<<'"+marker+"'\n",1)[1].split('\n'+marker+'\n',1)[0]
+                self.assertEqual(source,(ROOT/name).read_text().rstrip())
     def test_installer_embedded_worker_and_engine_match_sources(self):
         script=(ROOT/'install-ssh-autostart-fix.sh').read_text()
         self.assertEqual(script.split("<<'SSH_RESTORE_WORKER'\n",1)[1].split('\nSSH_RESTORE_WORKER')[0].strip(),(ROOT/'restore-ssh.sh').read_text().strip())

@@ -1,320 +1,1003 @@
 #!/usr/bin/env bash
-# Xiaomi NAS SSH bootstrap 2.0.0; old firmware and mi-shell firmware.
+# Xiaomi NAS SSH bootstrap 2.0.0; readable standalone source.
+# Generated from the three adjacent source files by build_release.py.
 set -euo pipefail
-for tool in python3 tar base64 ssh ssh-keygen openssl; do
+umask 077
+for tool in python3 cat ssh ssh-keygen openssl; do
  command -v "$tool" >/dev/null || { echo "缺少命令：$tool" >&2; exit 2; }
 done
 stage=$(mktemp -d /tmp/minas-ssh-client.XXXXXX)
 chmod 0700 "$stage"
 trap 'rm -rf -- "$stage"' EXIT
-base64 -d <<'NAS_SSH_CLIENT_BUNDLE' | tar -xz -C "$stage"
-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
-NAS_SSH_CLIENT_BUNDLE
-python3 "$stage/open_ssh_client.py" "$@"
+
+# ---- open_ssh_client.py (plain source) ----
+cat > "$stage/open_ssh_client.py" <<'MINAS_SSH_CLIENT_PY_SOURCE'
+#!/usr/bin/env python3
+"""Client bootstrap for an administrator's own Xiaomi NAS; never prints credentials."""
+import argparse
+import base64
+import http.client
+import getpass
+import io
+import ipaddress
+import json
+import os
+from pathlib import Path
+import re
+import socket
+import ssl
+import subprocess
+import sys
+import tarfile
+import tempfile
+import time
+import uuid
+from urllib.parse import urlsplit
+from urllib.request import Request,urlopen
+
+HERE = Path(__file__).resolve().parent
+MARKER = '__MINAS_ROOT_COMMAND_OK__'
+
+
+def checked(args, **kwargs):
+    return subprocess.run(args, check=True, capture_output=True, **kwargs).stdout
+
+
+def ssh_args(ip, identity):
+    return ['ssh', '-i', str(identity), '-o', 'IdentitiesOnly=yes', '-o', 'BatchMode=yes',
+            '-o', 'StrictHostKeyChecking=accept-new', '-o', 'ConnectTimeout=5', 'root@' + ip]
+
+
+def command_ready(ip, identity):
+    try:
+        result = subprocess.run(ssh_args(ip, identity) + ['printf "' + MARKER + '\\n"; id -u'],
+                                capture_output=True, timeout=15)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0 and result.stdout.decode(errors='replace').replace('\r', '').splitlines() == [MARKER, '0']
+
+
+def public_identity(identity):
+    identity.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    pub = Path(str(identity) + '.pub')
+    if not identity.exists():
+        if pub.exists():
+            raise RuntimeError('仅发现公钥而没有对应私钥，请使用 --identity 指定现有密钥，避免覆盖')
+        subprocess.run(['ssh-keygen', '-q', '-t', 'ed25519', '-N', '', '-f', str(identity)], check=True)
+    # Derive from the actual private key, rather than trusting a stale .pub file.
+    key = checked(['ssh-keygen', '-y', '-f', str(identity)], text=True).strip()
+    if not re.fullmatch(r'(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(?:256|384|521)) [A-Za-z0-9+/=]+', key):
+        raise RuntimeError('无法解析此 SSH 公钥')
+    return key + '\n'
+
+
+def recovery_tar(public):
+    memory = io.BytesIO()
+    with tarfile.open(fileobj=memory, mode='w:gz') as archive:
+        files = {name: (HERE / name).read_bytes() for name in ('recover-ssh.py', 'restore-ssh.sh')}
+        files['recovery.pub'] = public.encode()
+        for name, data in files.items():
+            info = tarfile.TarInfo(name); info.mode = 0o600; info.size = len(data)
+            archive.addfile(info, io.BytesIO(data))
+    return memory.getvalue()
+
+
+def root_payload(user, public):
+    if not re.fullmatch(r'u[0-9]+', user):
+        raise RuntimeError('NAS 返回的账户名称无效')
+    encoded = base64.b64encode(recovery_tar(public)).decode()
+    return ('#!/bin/sh\nset -eu\numask 077\nstage=$(mktemp -d /tmp/minas-ssh-open.XXXXXX)\n'
+            'trap \'rm -rf -- "$stage"\' EXIT\nbase64 -d <<\'REPAIR_BUNDLE\' | tar -xz -C "$stage"\n' +
+            encoded + '\nREPAIR_BUNDLE\n/usr/bin/python3 "$stage/recover-ssh.py" --local-recover --user ' + user +
+            ' --public-key "$stage/recovery.pub" --install-boot\n').encode()
+
+
+def container_repair_command(destination,user,public):
+    if not re.fullmatch(r'u[0-9]+',user) or not destination.startswith('/') or '..' in destination.split('/'):
+        raise RuntimeError('容器宿主机映射或 NAS 账户无效')
+    blob=base64.b64encode(recovery_tar(public)).decode()
+    program=('import base64,io,tarfile,tempfile,subprocess,shutil\n'
+             'from pathlib import Path\n'
+             'stage=Path(tempfile.mkdtemp(prefix="nas-ssh-emergency-"))\n'
+             'try:\n'
+             ' with tarfile.open(fileobj=io.BytesIO(base64.b64decode('+repr(blob)+'))) as tf:\n'
+             '  assert set(tf.getnames())=={"recover-ssh.py","restore-ssh.sh","recovery.pub"}\n'
+             '  tf.extractall(stage,**({"filter":"data"} if hasattr(tarfile,"data_filter") else {}))\n'
+             ' subprocess.run(["/usr/bin/python3",str(stage/"recover-ssh.py"),"--local-recover","--offline","--user",'+repr(user)+',"--public-key",str(stage/"recovery.pub")],check=True)\n'
+             'finally: shutil.rmtree(stage)\n')
+    return ['chroot',destination,'/usr/bin/python3','-c',program]
+
+
+class Portainer:
+    def __init__(self,url,username,password):
+        parts=urlsplit(url)
+        if parts.scheme not in ('http','https') or not parts.hostname or parts.username or parts.password or parts.query or parts.fragment:
+            raise RuntimeError('Portainer URL 无效；不要把凭据放进 URL')
+        self.url=url.rstrip('/');self.token=''
+        self.token=self.call('/api/auth',{'Username':username,'Password':password})['jwt']
+
+    def call(self,path,data=None,raw=False):
+        headers={'Content-Type':'application/json'}
+        if self.token:headers['Authorization']='Bearer '+self.token
+        body=None if data is None else json.dumps(data).encode()
+        request=Request(self.url+path,data=body,headers=headers)
+        with urlopen(request,timeout=45) as response:content=response.read(4*1024*1024)
+        return content if raw else json.loads(content)
+
+    def execute(self,endpoint,container,command):
+        prefix='/api/endpoints/'+str(endpoint)+'/docker'
+        identifier=self.call(prefix+'/containers/'+container+'/exec',{'AttachStdout':True,'AttachStderr':True,'User':'0','Cmd':command})['Id']
+        content=self.call(prefix+'/exec/'+identifier+'/start',{'Detach':False,'Tty':False},raw=True)
+        output=b''
+        while len(content)>=8 and content[0] in (0,1,2) and content[1:4]==b'\0\0\0':
+            size=int.from_bytes(content[4:8],'big');output+=content[8:8+size];content=content[8+size:]
+        output+=content
+        state=self.call(prefix+'/exec/'+identifier+'/json')
+        if state.get('Running') or state.get('ExitCode')!=0:
+            raise RuntimeError('容器恢复命令失败：'+output.decode(errors='replace')[-2000:])
+        return output.decode(errors='replace')
+
+
+def portainer_bootstrap(args,ip,public):
+    print('目标 Portainer：'+(args.portainer_url or 'http://'+ip+':9001'))
+    username=args.portainer_user or input('Portainer 用户名：').strip()
+    password=getpass.getpass('Portainer 密码（不保存）：')
+    api=Portainer(args.portainer_url or 'http://'+ip+':9001',username,password);password=''
+    endpoints=api.call('/api/endpoints')
+    endpoint=args.endpoint or (endpoints[0]['Id'] if len(endpoints)==1 else None)
+    if endpoint not in [item['Id'] for item in endpoints]:raise RuntimeError('请用 --endpoint 指定 Portainer 环境 ID')
+    prefix='/api/endpoints/'+str(endpoint)+'/docker'
+    containers=api.call(prefix+'/containers/json?all=1')
+    matching=[item for item in containers if '/'+args.container in item.get('Names',[]) or item.get('Id')==args.container]
+    if len(matching)!=1:raise RuntimeError('请用 --container 指定已映射 NAS / 的运行中应急容器名称')
+    container=matching[0]['Id'];details=api.call(prefix+'/containers/'+container+'/json')
+    mounts=[m for m in details.get('Mounts',[]) if m.get('Type')=='bind' and m.get('Source')=='/' and m.get('RW')]
+    if len(mounts)!=1 or not details.get('State',{}).get('Running'):raise RuntimeError('应急容器必须运行，且将宿主机 / 以可写方式绑定到容器目录')
+    destination=mounts[0]['Destination']
+    raw=api.execute(endpoint,container,['chroot',destination,'/usr/bin/python3','-c','from pathlib import Path; import json; print(json.dumps([p.name for p in Path("/home").glob("u[0-9]*") if p.is_dir()]))'])
+    users=json.loads(raw.strip());user=args.user or (users[0] if len(users)==1 else None)
+    if user not in users or not re.fullmatch(r'u[0-9]+',user or ''):raise RuntimeError('请用 --user 指定 NAS 管理账户（u 开头）')
+    result=api.execute(endpoint,container,container_repair_command(destination,user,public))
+    print(result.strip());print('等待宿主机一次性 Cron 激活（通常在下一分钟），随后验证真实 SSH 命令。')
+    return user
+
+
+def cert_directory(explicit):
+    if explicit:
+        return explicit
+    if Path('/proc/sys/fs/binfmt_misc/WSLInterop').exists():
+        raw = checked(['cmd.exe', '/c', 'echo', '%LOCALAPPDATA%'], text=True).strip()
+        return Path(checked(['wslpath', raw], text=True).strip()) / 'minasCert'
+    raise RuntimeError('请通过 --cert-dir 指定客户端 minasCert 证书目录')
+
+
+def certificates(directory):
+    pairs = [(p, directory / (p.name.removesuffix('_cert.pem') + '_private_key.pem'))
+             for p in directory.glob('*_cert.pem')]
+    pairs = [(p, k) for p, k in pairs if k.is_file()]
+    if len(pairs) != 1 or not (directory / 'ca_chain.pem').is_file():
+        raise RuntimeError('证书目录必须包含一个匹配的客户端证书/私钥和 ca_chain.pem；请在小米客户端重新登录后检查')
+    return directory / 'ca_chain.pem', *pairs[0]
+
+
+def discover_cn(ip):
+    pem = checked(['openssl', 's_client', '-connect', ip + ':443', '-servername', 'x'], input=b'', timeout=15)
+    subject = checked(['openssl', 'x509', '-noout', '-subject', '-nameopt', 'RFC2253'], input=pem).decode().strip().removeprefix('subject=')
+    match = re.search(r'(?:^|,)CN=([A-Za-z0-9.-]+)(?:,|$)', subject)
+    if not match:
+        raise RuntimeError('未能提取有效 NAS 证书名称')
+    return match.group(1)
+
+
+class NasTLS:
+    def __init__(self, ip, cn, paths):
+        self.ip, self.cn = ip, cn
+        ca, cert, key = paths
+        self.context = ssl.create_default_context(cafile=str(ca))
+        self.context.load_cert_chain(str(cert), str(key))
+
+    def request(self, port, method, path, body=None, credentials=None):
+        connection = http.client.HTTPSConnection(self.cn, port, context=self.context, timeout=20)
+        raw = socket.create_connection((self.ip, port), timeout=10)
+        connection.sock = self.context.wrap_socket(raw, server_hostname=self.cn)
+        headers = {'Content-Type': 'application/json' if port == 443 else 'application/octet-stream'}
+        if credentials:
+            headers['Authorization'] = 'Basic ' + base64.b64encode(credentials.encode()).decode()
+        try:
+            connection.request(method, path, body=body, headers=headers)
+            response = connection.getresponse()
+            return response.status, response.read(2 * 1024 * 1024)
+        finally:
+            connection.close()
+
+
+def webdav_account(data):
+    if isinstance(data, dict):
+        if isinstance(data.get('username'), str) and isinstance(data.get('password'), str):
+            return data['username'], data['password']
+        for value in data.values():
+            found = webdav_account(value)
+            if found:
+                return found
+    if isinstance(data, list):
+        for value in data:
+            found = webdav_account(value)
+            if found:
+                return found
+    return None
+
+
+def bootstrap(api, public, probe=False):
+    status, body = api.request(443, 'POST', '/cgi-bin/luci/filemgr/get_pool_info', b'{}')
+    if status != 200:
+        raise RuntimeError('客户端认证失败，HTTP ' + str(status))
+    account = webdav_account(json.loads(body))
+    if not account or not re.fullmatch(r'u[0-9]+', account[0]):
+        raise RuntimeError('未获取到有效 NAS WebDAV 账户')
+    user, password = account
+    name = 'ssh-repair-' + uuid.uuid4().hex + '.sh'
+    path = '/pool0/data/' + name
+    credentials = user + ':' + password
+    result_path='/pool0/data/'+name+'.probe'
+    result_host='/nas/pool0/'+user+'/data/'+name+'.probe'
+    payload=(('#!/bin/sh\nset -eu\numask 077\nid -u > '+result_host+'\nchown '+user+':'+user+' '+result_host+'\n').encode()
+             if probe else root_payload(user, public))
+    status, _ = api.request(5000, 'PUT', path, payload, credentials)
+    if status not in (200, 201, 204):
+        raise RuntimeError('恢复程序上传失败，HTTP ' + str(status))
+    # Preserve the existing authenticated legacy bootstrap route. A successful
+    # HTTP response is never treated as proof that the firmware executed it.
+    host_path = '/nas/pool0/' + user + '/data/' + name
+    escaped = ''.join('\\%03o' % byte for byte in host_path.encode())
+    from urllib.parse import quote
+    command = 'sh $(printf \'' + escaped + '\')'
+    trigger = '/pool0/video/__X2' + quote('";' + command + ';"', safe='') + '__.ts'
+    try:
+        try:
+            api.request(5000, 'GET', trigger, credentials=credentials)
+        except (TimeoutError, OSError, http.client.HTTPException):
+            pass  # The root process may outlive the WebDAV request; verify SSH.
+        if probe:
+            for _ in range(3):
+                status,body=api.request(5000,'GET',result_path,credentials=credentials)
+                if status==200 and body.strip()==b'0':return
+                time.sleep(1)
+            raise RuntimeError('该固件未通过旧证书引导探测；请保留插件或 Portainer 恢复入口')
+    finally:
+        # Uploaded material contains a public key only, but is still temporary.
+        try:
+            api.request(5000, 'DELETE', path, credentials=credentials)
+            if probe:api.request(5000,'DELETE',result_path,credentials=credentials)
+        except (OSError, http.client.HTTPException):
+            pass
+
+
+def main():
+    parser = argparse.ArgumentParser(description='小米 NAS SSH 开启/修复 2.0.0，兼容旧固件与 mi-shell 固件')
+    parser.add_argument('ip', nargs='?'); parser.add_argument('--identity', type=Path, default=Path.home() / '.ssh/id_ed25519')
+    parser.add_argument('--cert-dir', type=Path); parser.add_argument('--check', action='store_true')
+    parser.add_argument('--user', help='已有 SSH 时选择要保存恢复材料的 NAS 账户（u 开头）')
+    parser.add_argument('--probe-bootstrap',action='store_true',help='仅用临时 UID 标记检查证书引导路径，不修改 SSH、账户或启动配置')
+    parser.add_argument('--portainer',action='store_true',help='通过现有 Portainer 与宿主机根目录映射容器恢复；适用于旧引导被固件阻止时')
+    parser.add_argument('--portainer-url');parser.add_argument('--portainer-user')
+    parser.add_argument('--endpoint',type=int);parser.add_argument('--container',default='test')
+    parser.add_argument('--legacy-bootstrap', action='store_true', help='即使 SSH 可用也验证原有的客户端认证引导路径')
+    args = parser.parse_args(); ip = str(ipaddress.IPv4Address(args.ip or input('NAS IPv4 地址：').strip()))
+    if args.probe_bootstrap:
+        paths=certificates(cert_directory(args.cert_dir));bootstrap(NasTLS(ip,discover_cn(ip),paths),'',probe=True)
+        print('已验证当前固件的证书引导 root 命令路径；临时标记已清理，未修改 SSH 设置。');return
+    if args.check:
+        if not command_ready(ip, args.identity):
+            raise RuntimeError('SSH 未通过真实系统命令检查：可能未开启、公钥未安装，或仍为 mi-shell')
+        print('SSH 公钥认证与 root 系统命令均正常。'); return
+    public = public_identity(args.identity)
+    portainer_user=None
+    if args.portainer:
+        portainer_user=portainer_bootstrap(args,ip,public)
+    elif not args.legacy_bootstrap and command_ready(ip, args.identity):
+        # Discover the NAS account without logging any user config or secrets.
+        raw = checked(ssh_args(ip, args.identity) + ["find /home -maxdepth 1 -type d -name 'u[0-9]*'"], timeout=15).decode()
+        users = [Path(p).name for p in raw.splitlines() if re.fullmatch(r'/home/u[0-9]+', p)]
+        selected = args.user or (users[0] if len(users) == 1 else None)
+        if selected not in users:
+            raise RuntimeError('NAS 存在多个管理账户，请通过 SSH 恢复插件分别配置，或使用 --legacy-bootstrap 获取已登录客户端账户')
+        subprocess.run(ssh_args(ip, args.identity) + ['/bin/sh', '-s'], input=root_payload(selected, public), check=True, timeout=360)
+    else:
+        print('尝试通过已登录小米客户端的证书引导；不会修改 RPMB。')
+        paths = certificates(cert_directory(args.cert_dir))
+        bootstrap(NasTLS(ip, discover_cn(ip), paths), public)
+    for _ in range(45 if args.portainer else 20):
+        if command_ready(ip, args.identity):
+            if portainer_user:
+                subprocess.run(ssh_args(ip,args.identity)+['/bin/sh','-s'],input=root_payload(portainer_user,public),check=True,timeout=360)
+                if not command_ready(ip,args.identity):raise RuntimeError('开机修复安装后的 SSH 系统命令复查失败')
+            print('SSH 已开启，已验证 root 系统命令；开机恢复已安装。请保留登录私钥。'); return
+        time.sleep(2)
+    raise RuntimeError('未通过真实 SSH 命令验证。固件可能已阻止原有引导路径，请使用 SSH 恢复插件或 Portainer 离线应急包；HTTP 成功不代表 SSH 已恢复。')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (Exception, KeyboardInterrupt) as error:
+        print('失败：' + str(error), file=sys.stderr)
+        sys.exit(1)
+MINAS_SSH_CLIENT_PY_SOURCE
+
+# ---- recover-ssh.py (plain source) ----
+cat > "$stage/recover-ssh.py" <<'MINAS_SSH_RECOVERY_PY_SOURCE'
+#!/usr/bin/python3
+"""Bounded root operations for SSH recovery, not a shell or generic file API."""
+import base64
+import argparse
+import contextlib
+import fcntl
+import hashlib
+import json
+import io
+import os
+from pathlib import Path
+import pwd
+import re
+import shutil
+import stat
+import struct
+import subprocess
+import sys
+import tempfile
+import time
+import zipfile
+
+sys.dont_write_bytecode = True
+BASE = Path('/data/.minas-privileged')
+STATE = BASE/'sshrecovery'
+WORKER = Path('/data/ssh-autostart-fix/restore-ssh.sh')
+CRON = Path('/etc/cron.d/keep-ssh')
+DROPIN = Path('/etc/systemd/system/minas.boot_check.service.d/90-keep-ssh.conf')
+SOCKET = 'dropbear.socket'
+BOOT = 'minas.boot_check.service'
+SHELL_DROPIN = Path('/etc/systemd/system/dropbear@.service.d/90-normal-shell.conf')
+ROOT_TOOL = Path('/data/ssh-autostart-fix/recover-ssh.py')
+LOGIN_BACKUP = ROOT_TOOL.parent/'login-authorized-keys'
+PENDING_CRON = Path('/etc/cron.d/ssh-recovery-once')
+PENDING_RESULT = ROOT_TOOL.parent/'emergency-result.json'
+
+
+class RecoveryError(Exception):
+    pass
+
+
+def require(ok, message):
+    if not ok: raise RecoveryError(message)
+
+
+def safe(path):
+    """All privileged targets must remain root-owned, without symlink redirects."""
+    for node in [path]+list(path.parents):
+        require(not node.is_symlink(), '恢复路径包含符号链接，已停止操作')
+        if node.exists():
+            s=node.stat()
+            require(s.st_uid==0 and not s.st_mode & 0o022, '恢复路径权限异常，已停止操作')
+
+
+def atomic(path, data, mode=0o600):
+    safe(path)
+    fd,name=tempfile.mkstemp(prefix='.sshrecovery-',dir=path.parent)
+    try:
+        with os.fdopen(fd,'wb') as out:
+            out.write(data);out.flush();os.fsync(out.fileno());os.fchmod(out.fileno(),mode)
+        os.replace(name,path)
+    finally:
+        if os.path.exists(name):os.unlink(name)
+
+
+def public_key(text):
+    require(isinstance(text,str) and 0<len(text)<=16384, '公钥长度无效')
+    lines=[s.strip() for s in text.splitlines() if s.strip()]
+    require(len(lines)==1, '每次只能导入一条公钥，不接受 authorized_keys 选项')
+    parts=lines[0].split()
+    require(len(parts)>=2 and parts[0] in ('ssh-ed25519','ssh-rsa','ecdsa-sha2-nistp256','ecdsa-sha2-nistp384','ecdsa-sha2-nistp521'), '不支持的公钥格式')
+    try:
+        raw=base64.b64decode(parts[1],validate=True);position=0
+        def field():
+            nonlocal position
+            size=struct.unpack('>I',raw[position:position+4])[0];position+=4
+            value=raw[position:position+size];position+=size
+            if len(value)!=size:raise ValueError()
+            return value
+        algorithm=field().decode('ascii')
+        if algorithm!=parts[0]:raise ValueError()
+        if algorithm=='ssh-ed25519':
+            if len(field())!=32:raise ValueError()
+        elif algorithm=='ssh-rsa':
+            exponent,modulus=field(),field()
+            if not 1<=len(exponent)<=8 or int.from_bytes(exponent,'big')<3 or not 2048<=int.from_bytes(modulus,'big').bit_length()<=8192:raise ValueError()
+        else:
+            curve=field().decode('ascii');point=field()
+            if curve!=algorithm.removeprefix('ecdsa-sha2-') or len(point)!={'nistp256':65,'nistp384':97,'nistp521':133}[curve] or point[0]!=4:raise ValueError()
+        if position!=len(raw):raise ValueError()
+    except (ValueError,UnicodeError,struct.error,KeyError) as exc:
+        raise RecoveryError('公钥内容损坏或密钥长度不安全') from exc
+    canonical=parts[0]+' '+base64.b64encode(raw).decode()+' ssh-recovery'
+    fingerprint='SHA256:'+base64.b64encode(hashlib.sha256(raw).digest()).decode().rstrip('=')
+    return canonical,fingerprint
+
+
+def command(args, timeout=15):
+    result=subprocess.run(args,stdin=subprocess.DEVNULL,capture_output=True,text=True,timeout=timeout,env=root_environment())
+    require(result.returncode==0, '系统操作失败，请检查日志与设备固件支持情况')
+    return result.stdout.strip()
+
+
+def root_environment():
+    return {'PATH':'/usr/sbin:/usr/bin:/sbin:/bin','HOME':pwd.getpwuid(0).pw_dir,'LC_ALL':'C','OPENSSL_CONF':'/dev/null'}
+
+
+def private_public(text):
+    require(isinstance(text,str) and 0<len(text)<=65536, '私钥长度无效')
+    require(text.strip().startswith('-----BEGIN OPENSSH PRIVATE KEY-----') and text.strip().endswith('-----END OPENSSH PRIVATE KEY-----'), '私钥仅支持 OpenSSH Ed25519；其他密钥请上传 .pub 文件')
+    try:
+        raw=base64.b64decode(''.join(text.strip().splitlines()[1:-1]),validate=True)
+        prefix=b'openssh-key-v1\0'
+        if not raw.startswith(prefix):raise ValueError()
+        position=len(prefix)
+        def field():
+            nonlocal position
+            size=struct.unpack('>I',raw[position:position+4])[0];position+=4
+            value=raw[position:position+size];position+=size
+            if len(value)!=size:raise ValueError()
+            return value
+        cipher,kdf,options=field(),field(),field()
+        require(cipher==b'none' and kdf==b'none' and not options,'不支持加密私钥，请上传对应 .pub 文件')
+        count=struct.unpack('>I',raw[position:position+4])[0];position+=4
+        if count!=1:raise ValueError()
+        pub,private=field(),field()
+        if position!=len(raw) or len(private)<8 or private[:4]!=private[4:8]:raise ValueError()
+        offset=8
+        def part():
+            nonlocal offset
+            size=struct.unpack('>I',private[offset:offset+4])[0];offset+=4
+            value=private[offset:offset+size];offset+=size
+            if len(value)!=size:raise ValueError()
+            return value
+        algorithm,point,secret,comment=part(),part(),part(),part()
+        if algorithm!=b'ssh-ed25519' or len(point)!=32 or len(secret)!=64 or secret[32:]!=point:raise ValueError()
+        if private[offset:]!=bytes(range(1,len(private)-offset+1)):raise ValueError()
+        string=lambda v:struct.pack('>I',len(v))+v
+        if pub!=string(algorithm)+string(point):raise ValueError()
+        # Derive the public key from the seed using OpenSSL via stdin only.
+        result=subprocess.run(['/usr/bin/openssl','pkey','-inform','DER','-pubout','-outform','DER'],
+                              input=bytes.fromhex('302e020100300506032b657004220420')+secret[:32],capture_output=True,timeout=10,env=root_environment())
+        if result.returncode or result.stdout!=bytes.fromhex('302a300506032b6570032100')+point:raise ValueError()
+        return 'ssh-ed25519 '+base64.b64encode(pub).decode()
+    except (ValueError,struct.error) as exc:raise RecoveryError('私钥内容损坏或公私钥不匹配') from exc
+
+
+def unit_state(unit):
+    out=command(['/usr/bin/systemctl','show',unit,'-p','LoadState','-p','ActiveState','-p','SubState',
+                 '-p','ExecMainStartTimestampMonotonic','-p','ExecMainExitTimestampMonotonic','-p','Job'])
+    return dict(line.split('=',1) for line in out.splitlines() if '=' in line)
+
+
+def boot_finished():
+    s=unit_state(BOOT)
+    if s.get('LoadState')=='not-found':return None
+    start=int(s.get('ExecMainStartTimestampMonotonic','0'));end=int(s.get('ExecMainExitTimestampMonotonic','0'))
+    return start>0 and end>=start and s.get('Job','') in ('','0') and (s.get('ActiveState'),s.get('SubState')) in (('active','exited'),('inactive','dead'),('failed','failed'))
+
+
+class Recovery:
+    def __init__(self,user,state=STATE,root_home=None,host_key=Path('/etc/dropbear/dropbear_rsa_host_key'),shell_paths=None):
+        self.user=user;self.state=state;self.host_key=host_key
+        self.root_home=Path(root_home or pwd.getpwuid(0).pw_dir)
+        self.key=state/'keys'/(user+'.pub');self.host_backup=state/'host/dropbear_rsa_host_key'
+        self.logfile=state/'events.json'
+        self.settings_file=state/'keys'/(user+'.settings.json')
+        self.generated=state/'tmp'/('generated-'+user)
+        self.shell_dropin,self.normal_shell,self.limited_shell=shell_paths or (SHELL_DROPIN,Path('/usr/bin/bash.bash'),Path('/usr/sbin/mi-shell'))
+
+    def restore_shell(self):
+        # New firmware launches mi-shell despite root's configured login shell.
+        # Bind Bash only inside each Dropbear service; retain the vendor binary.
+        if not self.limited_shell.exists():return False
+        source=self.normal_shell.resolve(strict=True);target=self.limited_shell.resolve(strict=True)
+        for path in (source,target,self.shell_dropin):safe(path)
+        require(source.is_file() and source.stat().st_mode & 0o111 and target.is_file(),'固件的 SSH 命令解释器不可用')
+        require(all(re.fullmatch(r'/[A-Za-z0-9_./@-]+',str(p)) for p in (source,target)),'SSH 命令解释器路径异常')
+        data=('[Service]\nBindReadOnlyPaths='+str(source)+':'+str(target)+'\n').encode()
+        if self.shell_dropin.exists():
+            require(self.shell_dropin.read_bytes()==data,'已有不同的 SSH shell 配置，已停止覆盖')
+            return True
+        self.shell_dropin.parent.mkdir(mode=0o755,parents=True,exist_ok=True)
+        atomic(self.shell_dropin,data,0o644)
+        try:command(['/usr/bin/systemctl','daemon-reload'])
+        except Exception:
+            self.shell_dropin.unlink()
+            raise
+        self.log('已恢复新 SSH 会话的系统命令执行；固件 mi-shell 文件保留')
+        return True
+
+    def login_status(self):
+        folder=self.root_home/'.ssh';auth=folder/'authorized_keys'
+        result={'rootHome':str(self.root_home),'homeExists':self.root_home.is_dir(),
+                'sshDirectoryExists':folder.is_dir(),'authorizedKeysExists':auth.is_file(),
+                'savedKeyInstalled':False,'permissionsSafe':False,'ready':False,'reason':'home_missing'}
+        if not result['homeExists']:return result
+        if not result['sshDirectoryExists']:result['reason']='ssh_missing';return result
+        if not result['authorizedKeysExists']:result['reason']='authorization_missing';return result
+        try:
+            safe(auth)
+            require(folder.stat().st_mode & 0o077==0 and auth.stat().st_mode & 0o077==0,'登录目录或公钥文件权限异常')
+            result['permissionsSafe']=True
+            if self.key.exists():
+                wanted=public_key(self.key.read_text())[0].split()[:2]
+                result['savedKeyInstalled']=any(line.split()[:2]==wanted for line in auth.read_text().splitlines())
+                result['ready']=result['savedKeyInstalled']
+                result['reason']='ready' if result['ready'] else 'saved_key_not_installed'
+            else:
+                result['reason']='no_saved_key'
+        except (RecoveryError,OSError,ValueError):result['reason']='permissions_or_content'
+        return result
+
+    def emergency_bundle(self):
+        memory=io.BytesIO();files={'recover-ssh.py':Path(__file__).read_bytes(),
+                                 'restore-ssh.sh':(BASE/'ssh-recovery-boot.sh').read_bytes(),
+                                 'manifest.json':json.dumps({'version':'1.1.0','user':self.user}).encode()}
+        if self.key.exists():files['recovery.pub']=(public_key(self.key.read_text())[0]+'\n').encode()
+        files['README.txt']=('SSH 应急包 1.1.0\n仅包含恢复程序、可选登录公钥，不包含私钥或 NAS 主机密钥。\n'
+            '请提前下载到电脑并保留 Portainer 管理入口。\n'
+            'SSH 与插件都无法使用时，将本包解压到 NAS 用户共享文件夹 data/ssh-emergency。\n'
+            '在容器里将 NAS 的 / 绑定到 /nas，使用 root Console 执行：\n'
+            'chroot /nas /usr/bin/python3 /nas/pool0/'+self.user+'/data/ssh-emergency/recover-ssh.py --local-recover --offline\n'
+            '脚本先修复文件，再通过一次性宿主机 Cron 加载配置和开启 SSH。需宿主机 crond 正常运行。\n'
+            '查看结果：cat /nas/data/ssh-autostart-fix/emergency-result.json\n'
+            '也可在已有宿主机 root 终端执行同一程序并去掉 --offline。\n'
+            '若未包含 recovery.pub，执行时用 --public-key 指定自己的公钥文件。\n'
+            '固件若移除 Python、Cron、Docker 或所有管理入口，本包不能保证恢复；没有预留隐藏账户或免认证端口。\n').encode()
+        files['SHA256SUMS']=(''.join(hashlib.sha256(data).hexdigest()+'  '+name+'\n' for name,data in files.items())).encode()
+        with zipfile.ZipFile(memory,'w',zipfile.ZIP_DEFLATED) as archive:
+            for name,data in files.items():archive.writestr(name,data)
+        self.log('已导出离线应急包；不包含任何私钥')
+        return base64.b64encode(memory.getvalue()).decode()
+
+    def settings(self):
+        try:value=json.loads(self.settings_file.read_bytes())
+        except (OSError,ValueError):value={}
+        return {'generateWithoutPublicKey':value.get('generateWithoutPublicKey') is True}
+
+    def save_settings(self,value):
+        require(isinstance(value,bool),'生成设置必须为开关值')
+        atomic(self.settings_file,(json.dumps({'generateWithoutPublicKey':value})+'\n').encode())
+        self.log('已'+('开启' if value else '关闭')+'无公钥时生成登录密钥；此操作不生成密钥')
+
+    def clear_generated(self):
+        safe(self.generated)
+        if self.generated.exists():shutil.rmtree(self.generated)
+
+    def generated_info(self):
+        safe(self.generated)
+        try:info=json.loads((self.generated/'meta.json').read_bytes())
+        except (OSError,ValueError):return {'ready':False}
+        if float(info.get('expires',0))<=time.time():
+            self.clear_generated();return {'ready':False}
+        return {'ready':(self.generated/'private.key').is_file(),'expires':info['expires']}
+
+    def generate_login_key(self):
+        self.clear_generated()
+        seed=os.urandom(32)
+        result=subprocess.run(['/usr/bin/openssl','pkey','-inform','DER','-pubout','-outform','DER'],
+                              input=bytes.fromhex('302e020100300506032b657004220420')+seed,capture_output=True,timeout=10,env=root_environment())
+        require(result.returncode==0 and len(result.stdout)==44,'无法生成安全的 Ed25519 登录密钥')
+        point=result.stdout[-32:];string=lambda v:struct.pack('>I',len(v))+v
+        pub=string(b'ssh-ed25519')+string(point)
+        check=os.urandom(4)
+        private=check+check+string(b'ssh-ed25519')+string(point)+string(seed+point)+string(b'ssh-recovery')
+        padding=8-len(private)%8;private+=bytes(range(1,padding+1))
+        raw=b'openssh-key-v1\0'+string(b'none')+string(b'none')+string(b'')+struct.pack('>I',1)+string(pub)+string(private)
+        encoded=base64.b64encode(raw).decode()
+        private_text='-----BEGIN OPENSSH PRIVATE KEY-----\n'+'\n'.join(encoded[i:i+70] for i in range(0,len(encoded),70))+'\n-----END OPENSSH PRIVATE KEY-----\n'
+        public,fingerprint=public_key(private_public(private_text))
+        self.generated.mkdir(mode=0o700)
+        try:
+            atomic(self.generated/'private.key',private_text.encode())
+            atomic(self.generated/'public.pub',(public+'\n').encode())
+            atomic(self.generated/'meta.json',json.dumps({'expires':time.time()+900}).encode())
+            atomic(self.key,(public+'\n').encode())
+        except Exception:
+            self.clear_generated();raise
+        self.log('已生成登录密钥：'+fingerprint+'；私钥仅允许一次下载，15 分钟后过期')
+
+    def download_generated(self):
+        require(self.generated_info()['ready'],'下载已使用或过期，请勿重复请求')
+        memory=io.BytesIO()
+        with zipfile.ZipFile(memory,'w',zipfile.ZIP_DEFLATED) as archive:
+            for source,name in [('private.key','ssh-login.key'),('public.pub','ssh-login.pub')]:
+                path=self.generated/source;safe(path)
+                entry=zipfile.ZipInfo(name);entry.external_attr=0o600<<16
+                archive.writestr(entry,path.read_bytes())
+        result=base64.b64encode(memory.getvalue()).decode()
+        self.clear_generated();self.log('登录密钥包已领取，NAS 临时私钥已删除；请妥善保存下载文件')
+        return result
+
+    def log(self,message):
+        try:events=json.loads(self.logfile.read_bytes())
+        except (OSError,ValueError):events=[]
+        events.append({'time':int(time.time()),'user':self.user,'message':message})
+        atomic(self.logfile,(json.dumps(events[-80:],ensure_ascii=False)+'\n').encode())
+
+    def save_public(self,text):
+        canonical,fingerprint=public_key(text)
+        self.clear_generated()
+        atomic(self.key,(canonical+'\n').encode())
+        self.log('已保存恢复公钥：'+fingerprint)
+        return fingerprint
+
+    def save_private(self,text):
+        return self.save_public(private_public(text))
+
+    def restore_public(self):
+        if not self.key.exists():return False
+        canonical,_=public_key(self.key.read_text())
+        safe(self.root_home)
+        if not self.root_home.exists():
+            try:self.root_home.mkdir(mode=0o700)
+            except OSError as exc:raise RecoveryError('无法创建 root 登录目录：'+str(exc)) from exc
+        require(self.root_home.is_dir(),'root 登录目录不是目录，已停止操作')
+        folder=self.root_home/'.ssh';safe(folder)
+        folder.mkdir(mode=0o700,exist_ok=True);folder.chmod(0o700)
+        target=folder/'authorized_keys';safe(target)
+        data=target.read_bytes() if target.exists() else b''
+        require(len(data)<=1024*1024, 'authorized_keys 文件过大，已停止操作')
+        wanted=canonical.split()[1]
+        present=any(wanted in line.split() for line in data.decode('utf-8',errors='replace').splitlines())
+        if not present:data=data.rstrip(b'\n')+(b'\n' if data else b'')+canonical.encode()+b'\n'
+        atomic(target,data)
+        return True
+
+    def restore_host(self):
+        safe(self.host_key);safe(self.host_backup)
+        if self.host_key.exists():
+            require(0<self.host_key.stat().st_size<=65536, '主机密钥异常，未覆盖现有文件')
+            if not self.host_backup.exists():atomic(self.host_backup,self.host_key.read_bytes(),0o400)
+            return 'preserved'
+        self.host_key.parent.mkdir(mode=0o755,parents=True,exist_ok=True)
+        if self.host_backup.exists():
+            atomic(self.host_key,self.host_backup.read_bytes());return 'restored'
+        command(['/usr/sbin/dropbearkey','-t','rsa','-s','2048','-f',str(self.host_key)],timeout=25)
+        self.host_key.chmod(0o600);atomic(self.host_backup,self.host_key.read_bytes(),0o400)
+        return 'generated'
+
+    def status(self):
+        socket=unit_state(SOCKET);boot=boot_finished()
+        fingerprint=''
+        if self.key.exists():_,fingerprint=public_key(self.key.read_text())
+        try:events=json.loads(self.logfile.read_bytes())
+        except (OSError,ValueError):events=[]
+        host_valid=False
+        if self.host_key.is_file():
+            try:host_valid=bool(command(['/usr/sbin/dropbearkey','-y','-f',str(self.host_key)],timeout=5))
+            except (RecoveryError,OSError,subprocess.TimeoutExpired):pass
+        return dict(version='1.1.0',loginAuthorization=self.login_status(),hostKeyValid=host_valid,sshActive=socket.get('ActiveState')=='active',socketSupported=socket.get('LoadState')!='not-found',port=22,
+                    bootFinished=boot,keySaved=bool(fingerprint),fingerprint=fingerprint,hostKey=self.host_key.is_file(),hostBackup=self.host_backup.is_file(),
+                    bootService=dict(worker=WORKER.is_file(),cron=CRON.is_file(),dropin=DROPIN.is_file()),
+                    events=[e for e in reversed(events) if e.get('user')==self.user][:20],settings=self.settings(),generated=self.generated_info())
+
+    def recover(self):
+        require(unit_state(SOCKET).get('LoadState')!='not-found','固件没有 dropbear.socket，不支持恢复')
+        require(boot_finished() is not False,'小米开机检查尚未结束，请稍后重试')
+        if not self.key.exists() and self.settings()['generateWithoutPublicKey']:
+            self.generate_login_key()
+        host='untouched';key=False
+        if self.key.exists():
+            if str(self.root_home)==pwd.getpwuid(0).pw_dir:self.root_home=prepare_root_account()
+            host=self.restore_host();key=self.restore_public()
+        normal_shell=self.restore_shell()
+        command(['/usr/bin/systemctl','reset-failed',SOCKET])
+        command(['/usr/bin/systemctl','start',SOCKET])
+        require(unit_state(SOCKET).get('ActiveState')=='active','SSH 未恢复，请检查系统日志')
+        message='SSH 已开启；'+('恢复公钥已写入。' if key else '未保存公钥，未改动任何密钥文件。')
+        if normal_shell:message+='新建 SSH 会话可执行系统命令。'
+        if not key and not self.host_key.exists():message+='主机密钥仍缺失；若无法登录，请配置恢复材料后再处理。'
+        if self.generated_info()['ready']:message+='新登录密钥可在 15 分钟内下载一次。'
+        if host=='generated':message+='主机密钥已重新生成，下次连接需核对新指纹。'
+        self.log(message)
+        return message
+
+    def install_boot(self,overwrite=False):
+        require(unit_state(BOOT).get('LoadState')!='not-found' and unit_state(SOCKET).get('LoadState')!='not-found','设备缺少受支持的开机检查或 SSH 单元')
+        asset=BASE/'ssh-recovery-boot.sh';safe(asset)
+        data={WORKER:asset.read_bytes(),ROOT_TOOL:Path(__file__).read_bytes(),
+              DROPIN:b'[Service]\n# Restore SSH after the Xiaomi boot check when this drop-in is loaded.\nExecStartPost=/usr/bin/systemctl start dropbear.socket\n',
+              CRON:b'SHELL=/bin/sh\nPATH=/usr/sbin:/usr/bin:/sbin:/bin\nMAILTO=""\n\n# Wait for the real boot-check completion, then perform bounded SSH rechecks.\n@reboot root /bin/sh /data/ssh-autostart-fix/restore-ssh.sh\n'}
+        for target,value in data.items():
+            safe(target)
+            require(overwrite or not target.exists() or target.read_bytes()==value,'已有不同的 SSH 修复代码；确认替换后再操作')
+        command(['/bin/sh','-n',str(asset)])
+        previous={p:p.read_bytes() if p.exists() else None for p in data}
+        try:
+            for target,value in data.items():
+                target.parent.mkdir(mode=0o755,parents=True,exist_ok=True)
+                atomic(target,value,0o755 if target in (WORKER,ROOT_TOOL) else 0o644)
+            snapshot_login(self.root_home)
+            self.restore_shell()
+            command(['/usr/bin/systemctl','daemon-reload'])
+            command(['/usr/bin/systemctl','enable',SOCKET])
+            command(['/usr/bin/systemctl','reload','crond.service'])
+        except Exception:
+            for target,value in previous.items():
+                if value is None:target.unlink(missing_ok=True)
+                else:atomic(target,value,0o755 if target in (WORKER,ROOT_TOOL) else 0o644)
+            subprocess.run(['/usr/bin/systemctl','daemon-reload'],capture_output=True,timeout=15)
+            raise
+        self.log('已安装新旧固件开机修复：等待开机检查、补回缺失登录材料、修复 mi-shell、有限复查')
+        return '开机 SSH 修复服务已安装；不重启 NAS，下一次开机生效。'
+
+
+def init_recovery_state():
+    # Shell CGI checks executability before sudo; the shared entry directory
+    # must remain traversable. Recovery state and key directories stay private.
+    for path,mode in [(BASE,0o755)]+[(p,0o700) for p in (STATE,STATE/'keys',STATE/'host',STATE/'tmp',ROOT_TOOL.parent)]:
+        safe(path);path.mkdir(mode=mode,parents=True,exist_ok=True);path.chmod(mode)
+
+
+def prepare_root_account(passwd_file=Path('/etc/passwd'),fallback=Path('/home/rootx')):
+    safe(passwd_file)
+    lines=passwd_file.read_text().splitlines();matches=[i for i,line in enumerate(lines) if line.startswith('root:')]
+    require(len(matches)==1,'root 账户记录异常')
+    i=matches[0];fields=lines[i].split(':');require(len(fields)==7 and fields[2]=='0','root 账户记录异常')
+    current=Path(fields[5]);require(current.is_absolute(),'root 主目录无效')
+    if current==Path('/root'):
+        safe(fallback);fallback.mkdir(mode=0o700,exist_ok=True)
+        old=current/'.ssh/authorized_keys'
+        if old.is_file():
+            safe(old);data=old.read_bytes();require(len(data)<=1024*1024,'登录公钥文件过大')
+            folder=fallback/'.ssh';safe(folder);folder.mkdir(mode=0o700,exist_ok=True);folder.chmod(0o700)
+            target=folder/'authorized_keys';safe(target)
+            existing=target.read_bytes() if target.exists() else b''
+            extra=[line for line in data.splitlines() if line and line not in existing.splitlines()]
+            if extra:atomic(target,existing.rstrip(b'\n')+(b'\n' if existing else b'')+b'\n'.join(extra)+b'\n')
+        fields[5]=str(fallback);current=fallback
+    if fields[6].endswith('/mi-shell'):fields[6]='/bin/sh'
+    replacement=':'.join(fields)
+    if lines[i]!=replacement:
+        lines[i]=replacement;atomic(passwd_file,('\n'.join(lines)+'\n').encode(),stat.S_IMODE(passwd_file.stat().st_mode))
+    return current
+
+
+def snapshot_login(root_home):
+    auth=root_home/'.ssh/authorized_keys'
+    if auth.is_file():
+        safe(auth);data=auth.read_bytes();require(len(data)<=1024*1024,'登录公钥文件过大')
+        safe(LOGIN_BACKUP);LOGIN_BACKUP.parent.mkdir(mode=0o700,parents=True,exist_ok=True)
+        atomic(LOGIN_BACKUP,data)
+
+
+def repair_boot_materials():
+    init_recovery_state();home=prepare_root_account();recovery=Recovery('u0',state=STATE,root_home=home)
+    if LOGIN_BACKUP.is_file():
+        safe(LOGIN_BACKUP);data=LOGIN_BACKUP.read_bytes();require(len(data)<=1024*1024,'公钥恢复副本过大')
+        safe(home);home.mkdir(mode=0o700,exist_ok=True)
+        folder=home/'.ssh';safe(folder);folder.mkdir(mode=0o700,exist_ok=True);folder.chmod(0o700)
+        auth=folder/'authorized_keys';safe(auth)
+        if not auth.exists():atomic(auth,data)
+        if not recovery.host_key.exists():recovery.restore_host()
+    recovery.restore_shell()
+
+
+def activate_pending():
+    init_recovery_state();safe(PENDING_CRON);safe(PENDING_RESULT)
+    with (ROOT_TOOL.parent/'activate.lock').open('a') as lock:
+        fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        PENDING_CRON.unlink(missing_ok=True)
+        try:
+            deadline=time.monotonic()+300
+            while boot_finished() is False:
+                require(time.monotonic()<deadline,'等待开机检查超时');time.sleep(2)
+            repair_boot_materials();command(['/usr/bin/systemctl','daemon-reload'])
+            command(['/usr/bin/systemctl','enable',SOCKET]);command(['/usr/bin/systemctl','reset-failed',SOCKET])
+            command(['/usr/bin/systemctl','start',SOCKET])
+            require(unit_state(SOCKET).get('ActiveState')=='active','SSH socket 尚未就绪')
+            result={'ok':True,'state':'ready','message':'SSH 服务已开启，请用公钥重新连接验证系统命令。'}
+        except Exception as error:result={'ok':False,'state':'failed','error':str(error)}
+        atomic(PENDING_RESULT,(json.dumps(result,ensure_ascii=False)+'\n').encode())
+        return result
+
+
+def root_cli(argv=None):
+    parser=argparse.ArgumentParser(description='NAS root SSH 修复；支持旧固件和 mi-shell 固件，不提供远程免认证入口。')
+    modes=parser.add_mutually_exclusive_group(required=True)
+    for mode in ('local-recover','boot-repair','prepare-boot','activate-pending','diagnose'):modes.add_argument('--'+mode,action='store_true')
+    parser.add_argument('--user');parser.add_argument('--public-key',type=Path)
+    parser.add_argument('--offline',action='store_true');parser.add_argument('--install-boot',action='store_true')
+    args=parser.parse_args(argv);require(os.geteuid()==0,'此工具必须在 NAS root 终端或宿主机 chroot 中运行')
+    os.umask(0o077)
+    if args.diagnose:
+        print(json.dumps(Recovery('u0').status(),ensure_ascii=False));return
+    init_recovery_state();safe(STATE/'operations.lock')
+    with (STATE/'operations.lock').open('a') as lock:
+        fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        return root_command(args)
+
+
+def root_command(args):
+    if args.activate_pending:print(json.dumps(activate_pending(),ensure_ascii=False));return
+    if args.prepare_boot:
+        init_recovery_state();snapshot_login(Path(pwd.getpwuid(0).pw_dir));repair_boot_materials();return
+    if args.boot_repair:repair_boot_materials();return
+    adjacent=Path(__file__).resolve().parent;manifest=adjacent/'manifest.json'
+    user=args.user
+    if not user and manifest.is_file():user=json.loads(manifest.read_bytes()).get('user')
+    require(isinstance(user,str) and re.fullmatch(r'u[0-9]+',user),'请通过 --user 指定 NAS 管理账户，或使用带 manifest.json 的应急包')
+    # Both offline and online paths use the same bounded filesystem repairs.
+    init_recovery_state();home=prepare_root_account();recovery=Recovery(user,state=STATE,root_home=home)
+    key=args.public_key or adjacent/'recovery.pub'
+    if key.is_file():
+        require(key.stat().st_size<=16384,'公钥文件过大');recovery.save_public(key.read_text())
+    if recovery.key.exists():recovery.restore_public();recovery.restore_host()
+    require((home/'.ssh/authorized_keys').is_file(),'没有登录授权，请提供 --public-key 公钥文件')
+    atomic(ROOT_TOOL,Path(__file__).read_bytes(),0o700);snapshot_login(home)
+    if args.offline:
+        cron=b'SHELL=/bin/sh\nPATH=/usr/sbin:/usr/bin:/sbin:/bin\n* * * * * root /usr/bin/python3 /data/ssh-autostart-fix/recover-ssh.py --activate-pending >/dev/null 2>&1\n'
+        safe(PENDING_CRON);require(not PENDING_CRON.exists() or PENDING_CRON.read_bytes()==cron,'已有不同的一次性恢复任务')
+        atomic(PENDING_RESULT,b'{"ok":false,"state":"pending"}\n');atomic(PENDING_CRON,cron,0o644)
+        print(json.dumps({'ok':True,'state':'pending','message':'文件已准备；等待宿主机 Cron 激活，尚未验证 SSH。','result':str(PENDING_RESULT)},ensure_ascii=False));return
+    recovery.restore_shell();command(['/usr/bin/systemctl','daemon-reload'])
+    result=activate_pending();require(result['ok'],result.get('error','SSH 激活失败'))
+    if args.install_boot:
+        asset=adjacent/'restore-ssh.sh';require(asset.is_file(),'缺少 restore-ssh.sh')
+        atomic(BASE/'ssh-recovery-boot.sh',asset.read_bytes(),0o755);recovery.install_boot(True)
+    print(json.dumps(result,ensure_ascii=False))
+
+
+def prune():
+    require(os.geteuid()==0,'仅允许系统清理过期临时密钥')
+    safe(STATE)
+    with (STATE/'operations.lock').open('a') as lock:
+        try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        except BlockingIOError:return
+        for folder in (STATE/'tmp').glob('generated-u*'):
+            if re.fullmatch(r'generated-u[0-9]+',folder.name):
+                Recovery(folder.name.removeprefix('generated-'),state=STATE).generated_info()
+
+
+def api(user,request):
+    require(os.geteuid()==0,'需要安装插件的受限权限组件')
+    safe(BASE);safe(STATE)
+    import privileged_runtime as runtime
+    runtime.authorize(user,'sshrecovery')
+    require(request.get('pluginUser')==user,'禁止访问其他用户的恢复材料')
+    home=Path('/home')/user/'plugin/sshrecovery'
+    require((home/'INFO').is_file(),'插件未安装')
+    recovery=Recovery(user)
+    with (STATE/'operations.lock').open('a') as lock:
+        fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        action=request.get('action')
+        extra={}
+        if action=='status':message=''
+        elif action=='recover':message=recovery.recover()
+        elif action=='import_public':message='恢复公钥已保存：'+recovery.save_public(request.get('key'))
+        elif action=='import_private':message='已提取并校验公钥，私钥未写入磁盘：'+recovery.save_private(request.get('key'))
+        elif action=='save_settings':
+            recovery.save_settings(request.get('generateWithoutPublicKey'));message='生成选项已保存；未执行密钥生成。'
+        elif action=='download_keys':
+            extra={'keyArchive':recovery.download_generated(),'downloadName':'ssh-login-keys.zip'};message='密钥包已领取，请保存下载文件。'
+        elif action=='download_emergency':
+            extra={'emergencyArchive':recovery.emergency_bundle(),'downloadName':'nas-ssh-emergency.zip'};message='应急包已生成，请保存到电脑。包内不包含任何私钥。'
+        elif action=='forget_key':
+            recovery.key.unlink(missing_ok=True);recovery.clear_generated();recovery.log('已移除插件内保存的公钥；现有 authorized_keys 未修改');message='保存的恢复公钥已移除，当前登录公钥未删除。'
+        elif action=='install_boot':message=recovery.install_boot(request.get('overwrite') is True)
+        else:raise RecoveryError('不支持的操作')
+        return dict(ok=True,message=message,**recovery.status(),**extra)
+
+
+if __name__=='__main__':
+    try:root_cli()
+    except Exception as error:
+        print(json.dumps({'ok':False,'error':str(error)},ensure_ascii=False));sys.exit(1)
+MINAS_SSH_RECOVERY_PY_SOURCE
+
+# ---- restore-ssh.sh (plain source) ----
+cat > "$stage/restore-ssh.sh" <<'MINAS_SSH_RESTORE_SH_SOURCE'
+#!/bin/sh
+# Bounded boot recovery, not a permanent watchdog. Never changes RPMB or passwords.
+set -u
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+WAIT_SECONDS=300
+POLL_SECONDS=2
+RECHECK_SECONDS=5
+RECHECK_COUNT=12
+BOOT_UNIT=minas.boot_check.service
+SOCKET_UNIT=dropbear.socket
+
+log() {
+    logger -t ssh-autostart-fix -- "$*"
+}
+seconds() {
+    read -r elapsed rest < /proc/uptime
+    printf '%s\n' "${elapsed%%.*}"
+}
+boot_finished() {
+    active= sub= start=0 end=0 result= job=
+    state=$(timeout 8 /usr/bin/systemctl show "$BOOT_UNIT" \
+        -p ActiveState -p SubState -p ExecMainStartTimestampMonotonic \
+        -p ExecMainExitTimestampMonotonic -p Result -p Job 2>/dev/null) || return 1
+    while IFS='=' read -r key value; do
+        case "$key" in
+            ActiveState) active=$value ;;
+            SubState) sub=$value ;;
+            ExecMainStartTimestampMonotonic) start=$value ;;
+            ExecMainExitTimestampMonotonic) end=$value ;;
+            Result) result=$value ;;
+            Job) job=$value ;;
+        esac
+    done <<EOF_STATE
+$state
+EOF_STATE
+    case "$start:$end" in *[!0-9:]*|:*|*:) return 1 ;; esac
+    [ "$start" -gt 0 ] && [ "$end" -ge "$start" ] || return 1
+    [ -z "$job" ] || [ "$job" = "0" ] || return 1
+    case "$active:$sub" in
+        active:exited|inactive:dead|failed:failed) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+socket_active() {
+    timeout 8 /usr/bin/systemctl is-active --quiet "$SOCKET_UNIT"
+}
+wait_for_boot() {
+    while ! boot_finished; do
+        if [ "$(seconds)" -ge "$deadline" ]; then
+            log "ERROR: boot check did not finish within ${WAIT_SECONDS}s; SSH recovery aborted"
+            return 1
+        fi
+        sleep "$POLL_SECONDS"
+    done
+}
+
+# Read-only probe used during installation/tests; it does not acquire the boot lock.
+if [ "${1:-}" = "--check" ]; then
+    if boot_finished && socket_active; then
+        printf '%s\n' 'boot-check finished; dropbear.socket active'
+        exit 0
+    fi
+    exit 1
+fi
+
+exec 9>/run/ssh-autostart-fix.lock
+flock -n 9 || exit 0
+deadline=$(( $(seconds) + WAIT_SECONDS ))
+log "waiting for $BOOT_UNIT to finish (limit ${WAIT_SECONDS}s)"
+wait_for_boot || exit 1
+log "boot check finished: state=$active/$sub result=$result; checking SSH"
+if [ -f /data/ssh-autostart-fix/recover-ssh.py ]; then
+    if ! timeout 30 /usr/bin/python3 /data/ssh-autostart-fix/recover-ssh.py --boot-repair; then
+        log 'ERROR: SSH login material or mi-shell compatibility repair failed'
+        exit 1
+    fi
+fi
+i=0
+while [ "$i" -le "$RECHECK_COUNT" ]; do
+    # If the vendor check runs again during this short window, wait for it again.
+    wait_for_boot || exit 1
+    if ! socket_active; then
+        if timeout 10 /usr/bin/systemctl start "$SOCKET_UNIT"; then
+            log "dropbear.socket restored after boot check (check $i/$RECHECK_COUNT)"
+        else
+            log "WARNING: could not start dropbear.socket (check $i/$RECHECK_COUNT)"
+        fi
+    fi
+    if [ "$i" -eq "$RECHECK_COUNT" ]; then
+        if socket_active; then
+            log "SSH recovery verified; bounded rechecks finished"
+            exit 0
+        fi
+        log "ERROR: SSH remains inactive after bounded rechecks"
+        exit 1
+    fi
+    i=$((i + 1))
+    sleep "$RECHECK_SECONDS"
+done
+MINAS_SSH_RESTORE_SH_SOURCE
+
+python3 -B "$stage/open_ssh_client.py" "$@"

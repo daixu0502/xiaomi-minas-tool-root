@@ -1,6 +1,6 @@
 # 小米智能存储 SSH 开启与开机恢复
 
-版本 **2.0.0**。[仓库](https://github.com/daixu0502/xiaomi-minas-tool-root)。SSH shell 入口可单文件运行，内置修复程序与 SSH 恢复插件 1.1.0 保持一致。另附独立的 Docker bridge 网络出口修复工具。
+版本 **2.0.0**。[仓库](https://github.com/daixu0502/xiaomi-minas-tool-root)。SSH shell 入口可单文件运行，直接内嵌可阅读的 Python/Shell 源码，不使用 Base64 压缩包隐藏静态源码；内置修复程序与 SSH 恢复插件 1.1.0 保持一致。另附独立的 Docker bridge 网络出口修复工具。
 
 ## 开启或修复 SSH
 
@@ -117,6 +117,8 @@ python3 -B /data/docker-bridge-repair/repair.py --rollback <事务编号>
 
 ```bash
 python3 build_release.py
+# 仅重新生成明文 SSH 开启入口，不同步或改动其他修复程序：
+python3 build_release.py --ssh-entrypoint-only
 python3 -B -m unittest discover -s tests -p 'test_*.py'
 ```
 

@@ -1,12 +1,35 @@
 #!/usr/bin/env python3
 """Build standalone shell entry points from reviewed, secret-free source files."""
-import base64
-import io
+import argparse
 from pathlib import Path
-import tarfile
 
 HERE = Path(__file__).resolve().parent
 PROJECT = HERE.parent
+
+
+def build_ssh_entrypoint():
+    """Embed each source verbatim in a quoted heredoc; no encoded static bundle."""
+    wrapper = ('#!/usr/bin/env bash\n'
+               '# Xiaomi NAS SSH bootstrap 2.0.0; readable standalone source.\n'
+               '# Generated from the three adjacent source files by build_release.py.\n'
+               'set -euo pipefail\numask 077\n'
+               'for tool in python3 cat ssh ssh-keygen openssl; do\n'
+               ' command -v "$tool" >/dev/null || { echo "缺少命令：$tool" >&2; exit 2; }\ndone\n'
+               'stage=$(mktemp -d /tmp/minas-ssh-client.XXXXXX)\nchmod 0700 "$stage"\n'
+               'trap \'rm -rf -- "$stage"\' EXIT\n')
+    for name, marker in (
+        ('open_ssh_client.py', 'MINAS_SSH_CLIENT_PY_SOURCE'),
+        ('recover-ssh.py', 'MINAS_SSH_RECOVERY_PY_SOURCE'),
+        ('restore-ssh.sh', 'MINAS_SSH_RESTORE_SH_SOURCE'),
+    ):
+        source = (HERE / name).read_text(encoding='utf-8').rstrip() + '\n'
+        if marker in source.splitlines():
+            raise ValueError('Source conflicts with heredoc delimiter: ' + name)
+        wrapper += ('\n# ---- ' + name + ' (plain source) ----\n'
+                    'cat > "$stage/' + name + '" <<\'' + marker + '\'\n' +
+                    source + marker + '\n')
+    wrapper += '\npython3 -B "$stage/open_ssh_client.py" "$@"\n'
+    (HERE / 'xiaomi-storage-open-ssh-wsl.sh').write_text(wrapper, encoding='utf-8', newline='\n')
 
 
 def build_bridge_entrypoint():
@@ -58,25 +81,15 @@ def build():
     if '请输入 NAS IPv4 地址' not in text:
         text = text.replace(key, 'if [[ -z "$NAS_IP" ]]; then read -r -p "请输入 NAS IPv4 地址: " NAS_IP; fi\n\n' + key, 1)
     installer.write_text(text, encoding='utf-8', newline='\n')
-    if plugin.is_dir():
-        (PROJECT / installer.name).write_text(text, encoding='utf-8', newline='\n')
-    memory = io.BytesIO()
-    with tarfile.open(fileobj=memory, mode='w:gz') as tf:
-        for name in ('open_ssh_client.py', 'recover-ssh.py', 'restore-ssh.sh'):
-            data = (HERE / name).read_bytes().replace(b'\r\n', b'\n')
-            info = tarfile.TarInfo(name); info.size = len(data); info.mode = 0o600
-            tf.addfile(info, io.BytesIO(data))
-    blob = base64.encodebytes(memory.getvalue()).decode()
-    wrapper = ('#!/usr/bin/env bash\n# Xiaomi NAS SSH bootstrap 2.0.0; old firmware and mi-shell firmware.\n'
-               'set -euo pipefail\nfor tool in python3 tar base64 ssh ssh-keygen openssl; do\n'
-               ' command -v "$tool" >/dev/null || { echo "缺少命令：$tool" >&2; exit 2; }\ndone\n'
-               'stage=$(mktemp -d /tmp/minas-ssh-client.XXXXXX)\nchmod 0700 "$stage"\n'
-               'trap \'rm -rf -- "$stage"\' EXIT\nbase64 -d <<\'NAS_SSH_CLIENT_BUNDLE\' | tar -xz -C "$stage"\n' +
-               blob + 'NAS_SSH_CLIENT_BUNDLE\npython3 "$stage/open_ssh_client.py" "$@"\n')
-    (HERE / 'xiaomi-storage-open-ssh-wsl.sh').write_text(wrapper, encoding='utf-8', newline='\n')
-    if plugin.is_dir():
-        (PROJECT / 'xiaomi-storage-open-ssh-wsl.sh').write_text(wrapper, encoding='utf-8', newline='\n')
+    build_ssh_entrypoint()
 
 
 if __name__ == '__main__':
-    build()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--ssh-entrypoint-only', action='store_true',
+                        help='Only regenerate the readable SSH entry point from its adjacent sources')
+    args = parser.parse_args()
+    if args.ssh_entrypoint_only:
+        build_ssh_entrypoint()
+    else:
+        build()

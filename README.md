@@ -71,4 +71,8 @@ python3 build_release.py
 python3 -B -m unittest discover -s tests -p 'test_*.py'
 ```
 
-单文件脚本由旁边的已审阅源码生成。测试核对内嵌程序逐字节一致，并覆盖假成功、超时、Portainer 挂载与 Docker 流协议。发布包及 SHA256SUMS 位于 `releases/`。
+单文件脚本由旁边的已审阅源码生成。测试核对内嵌程序逐字节一致，并覆盖假成功、超时、Portainer 挂载与 Docker 流协议。可通过仓库页面的 Code → Download ZIP 获取完整源码。
+
+## 获取源码
+
+在 GitHub 仓库页面选择 **Code → Download ZIP**，解压后保留项目目录结构，按本页说明运行对应脚本。也可从 **Tags** 页面选择指定版本源码。

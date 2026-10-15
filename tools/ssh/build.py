@@ -10,7 +10,6 @@ PROJECT = ROOT.parent
 
 def build_ssh_entrypoint():
     """Generate two pure shell entry points from the same reviewed worker."""
-    client = (HERE / 'src/open-ssh-client.sh').read_text(encoding='utf-8')
     worker = (HERE / 'src/restore-ssh.sh').read_text(encoding='utf-8').rstrip() + '\n'
     shared = PROJECT / 'ssh-recovery-plugin/payload/system/restore-ssh.sh'
     if shared.is_file() and shared.read_text(encoding='utf-8') != worker:
@@ -18,15 +17,18 @@ def build_ssh_entrypoint():
     marker = 'MINAS_SSH_REPAIR_SH_SOURCE'
     if marker in worker.splitlines():
         raise ValueError('Source conflicts with heredoc delimiter: ' + marker)
-    start = client.index('write_repair_sources() {')
-    end = client.index('\nmake_payload() {', start)
     embedded = ('write_repair_sources() {\n'
                 '    cat > "$STAGE/restore-ssh.sh" <<\'' + marker + '\'\n' +
                 worker + marker + '\n}\n')
-    standalone = client[:start] + embedded + client[end:]
-    (ROOT / 'xiaomi-storage-open-ssh-wsl.sh').write_text(standalone, encoding='utf-8', newline='\n')
-    installer = standalone.replace('then main "$@"; fi', 'then main --install-boot-only "$@"; fi')
-    (ROOT / 'install-ssh-autostart-fix.sh').write_text(installer, encoding='utf-8', newline='\n')
+    for name,source in [('xiaomi-storage-open-ssh-wsl.sh','open-ssh-client.sh'),
+                        ('install-ssh-autostart-fix.sh','install-ssh-client.sh')]:
+        client=(HERE/'src'/source).read_text(encoding='utf-8')
+        start=client.index('write_repair_sources() {')
+        end=client.index('\n}\n',start)+3
+        standalone=client[:start]+embedded+'\n'+client[end:]
+        if name=='install-ssh-autostart-fix.sh':
+            standalone=standalone.replace('then main "$@"; fi','then main --install-boot-only "$@"; fi')
+        (ROOT/name).write_text(standalone,encoding='utf-8',newline='\n')
 
 
 def build():

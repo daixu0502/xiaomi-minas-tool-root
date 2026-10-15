@@ -1,25 +1,27 @@
 # 小米 NAS 管理工具
 
-版本 **2.1.1**。各工具的使用入口放在根目录；源码、构建文件、测试、依赖和详细说明按工具放在 `tools/`。
+版本 **2.1.2**。各工具的使用入口放在根目录；源码、构建文件、测试、依赖和详细说明按工具放在 `tools/`。
 
 ## 使用入口
 
 | 根目录脚本 | 用途 | 详细说明 |
 |---|---|---|
-| [xiaomi-storage-open-ssh-wsl.sh](xiaomi-storage-open-ssh-wsl.sh) | WSL 开启/修复 SSH，默认安装开机恢复 | [SSH 工具](tools/ssh/README.md) |
+| [xiaomi-storage-open-ssh-wsl.sh](xiaomi-storage-open-ssh-wsl.sh) | 按上游证书/WebDAV 流程首次开启 SSH，成功后安装开机恢复 | [SSH 工具](tools/ssh/README.md) |
 | [install-ssh-autostart-fix.sh](install-ssh-autostart-fix.sh) | 已有正常 SSH 时安装/更新相同开机恢复 | [SSH 工具](tools/ssh/README.md) |
 | [fix-docker-bridge.sh](fix-docker-bridge.sh) | NAS Docker bridge 网络检查、修复与回退 | [Docker bridge 工具](tools/docker-bridge/README.md) |
 
 ```bash
 # 在 WSL 中开启/修复 SSH，自动安装开机恢复：
-bash xiaomi-storage-open-ssh-wsl.sh 192.168.31.100 --user u123456789
+bash xiaomi-storage-open-ssh-wsl.sh 192.168.31.100
 # 只安装或更新开机恢复：
 bash install-ssh-autostart-fix.sh 192.168.31.100
 # 在 NAS 的真实 root 命令行中只读检查 Docker 网络：
 sh fix-docker-bridge.sh --check
 ```
 
-SSH 流程为纯 Shell，兼容旧 root 目录与新版 mi-shell。多账户可交互选择或用 `--user` 指定。旧证书入口若被固件封堵，仍需保留 SSH 恢复插件或 Portainer 入口。安装开机修复不主动重启设备。
+开启脚本保留 Scruel 上游的证书 → WebDAV 上传 → 触发 → SSH 验证顺序，不预先依赖已有 SSH，不自动切换 Portainer；NAS 账户来自当前登录客户端证书对应的 WebDAV 账户。兼容旧 root 目录与新版 mi-shell，验证真实 root 命令后再安装与插件同源的开机修复。安装开机修复不主动重启设备。
+
+已知限制：当前缺少本次上传脚本的独立执行回执。如果设备原本已有可用 SSH，即使触发失败，后续 SSH 验证仍可能通过并安装开机修复，因此最终成功提示不能证明首次开启成功。无可用 SSH 且触发失败时会止于 SSH 验证。详见 [SSH 工具说明](tools/ssh/README.md)。
 
 SSH 开启脚本、安装脚本与 SSH 恢复插件使用同一份 worker，构建和测试核对源码一致。
 

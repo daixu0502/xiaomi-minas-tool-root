@@ -12,7 +12,9 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 TOOL=Path(__file__).resolve().parents[1]
 ROOT=TOOL.parents[1]
-ENTRY=ROOT/'xiaomi-storage-open-ssh-wsl.sh'
+# The independent repair client retains its already-tested recovery modes.
+# First-time upstream-style opening has its own tests in test_first_open.py.
+ENTRY=TOOL/'src/install-ssh-client.sh'
 MOCK=r'''#!/usr/bin/python3
 import json, os, pathlib, sys
 r=pathlib.Path(os.environ['SSH_CLIENT_TEST_ROOT']); args=sys.argv[1:]; name=pathlib.Path(sys.argv[0]).name
@@ -197,7 +199,7 @@ class PackagingTests(unittest.TestCase):
         for script in ROOT.glob('*.sh'): subprocess.run(['bash','-n',str(script)],check=True)
         subprocess.run(['/bin/sh','-n',str(TOOL/'src/restore-ssh.sh')],check=True)
     def test_help_needs_no_network_or_runtime_python(self):
-        result=subprocess.run(['bash',str(ENTRY),'--help'],capture_output=True,text=True,timeout=5)
-        self.assertEqual(result.returncode,0,result.stderr); self.assertIn('2.1.1',result.stdout)
+        result=subprocess.run(['bash',str(ROOT/'xiaomi-storage-open-ssh-wsl.sh'),'--help'],capture_output=True,text=True,timeout=5)
+        self.assertEqual(result.returncode,0,result.stderr); self.assertIn('2.1.2',result.stdout)
 
 if __name__=='__main__': unittest.main()

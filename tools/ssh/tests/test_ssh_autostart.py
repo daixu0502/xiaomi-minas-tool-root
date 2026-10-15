@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 
-INSTALLER = Path(__file__).resolve().parents[1] / "install-ssh-autostart-fix.sh"
+INSTALLER = Path(__file__).resolve().parents[3] / "install-ssh-autostart-fix.sh"
 MOCK = r'''#!/usr/bin/python3
 import json, os, pathlib, sys
 root = pathlib.Path(os.environ["SSH_TEST_ROOT"])

@@ -6,7 +6,8 @@ import subprocess
 import tempfile
 import unittest
 
-ROOT=Path(__file__).resolve().parents[1]
+TOOL=Path(__file__).resolve().parents[1]
+ROOT=TOOL.parents[1]
 
 class MaterialsTests(unittest.TestCase):
     def setUp(self):
@@ -24,7 +25,7 @@ class MaterialsTests(unittest.TestCase):
         keygen=self.bin/'dropbearkey'
         keygen.write_text('#!/bin/sh\nwhile [ "$#" -gt 0 ]; do if [ "$1" = -f ]; then shift; file=$1; fi; shift; done\n[ -s "$file" ] || printf host-key > "$file"\n')
         keygen.chmod(0o755)
-        source=(ROOT/'restore-ssh.sh').read_text().rsplit('\ncase "${1:-}" in',1)[0]
+        source=(TOOL/'src/restore-ssh.sh').read_text().rsplit('\ncase "${1:-}" in',1)[0]
         mapping=dict([('/usr/bin/bash.bash',self.bin/'bash.bash'),('/usr/sbin/mi-shell',self.bin/'mi-shell'),
                         ('/usr/sbin/dropbearkey',keygen),('/bin/bash',self.bin/'bash'),
                         ('/data',self.root/'data'),('/etc',self.etc),('/home/rootx',self.home),('/home',self.root/'home'),('/root',self.old)])

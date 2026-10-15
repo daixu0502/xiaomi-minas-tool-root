@@ -10,8 +10,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('bridge_repair', ROOT / 'docker_bridge_repair.py')
+TOOL = Path(__file__).resolve().parents[1]
+ROOT = TOOL.parents[1]
+spec = importlib.util.spec_from_file_location('bridge_repair', TOOL / 'src/docker_bridge_repair.py')
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
 
@@ -364,7 +365,7 @@ class BridgeTests(unittest.TestCase):
     def test_single_file_wrapper_matches_reviewed_python(self):
         script = (ROOT / 'fix-docker-bridge.sh').read_text()
         embedded = script.split("<<'MINAS_DOCKER_BRIDGE_PY'\n", 1)[1].split('\nMINAS_DOCKER_BRIDGE_PY\n', 1)[0]
-        self.assertEqual(embedded, (ROOT / 'docker_bridge_repair.py').read_text().rstrip())
+        self.assertEqual(embedded, (TOOL / 'src/docker_bridge_repair.py').read_text().rstrip())
 
     def test_watchdog_waits_for_inflight_apply_instead_of_losing_rollback(self):
         with patch.object(m.os, 'geteuid', return_value=0), patch.object(m, 'secure_dir'), \

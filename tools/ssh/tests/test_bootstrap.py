@@ -10,7 +10,8 @@ import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-ROOT=Path(__file__).resolve().parents[1]
+TOOL=Path(__file__).resolve().parents[1]
+ROOT=TOOL.parents[1]
 ENTRY=ROOT/'xiaomi-storage-open-ssh-wsl.sh'
 MOCK=r'''#!/usr/bin/python3
 import json, os, pathlib, sys
@@ -32,7 +33,9 @@ elif name=='powershell.exe':
     sys.stdout.buffer.write('C:\\Users\\测试用户\\AppData\\Local'.encode())
     sys.stderr.buffer.write('本地化提示'.encode('gbk'))
 elif name=='wslpath': print(str(r/'测试用户'))
-elif name=='openssl': print('subject=CN=nas.example.test' if args[0]=='x509' else 'fixture')
+elif name=='openssl':
+    if args[0]=='x509': sys.stdin.buffer.read()
+    print('subject=CN=nas.example.test' if args[0]=='x509' else 'fixture')
 elif name=='sleep': pass
 elif name=='curl':
     url=next(a for a in args if a.startswith(('https://','http://')))
@@ -54,7 +57,7 @@ class ClientTests(unittest.TestCase):
         self.root=Path(self.temp.name); self.bin=self.root/'bin'; self.bin.mkdir()
         for name in ['ssh','powershell.exe','wslpath','openssl','curl','sleep']:
             p=self.bin/name; p.write_text(MOCK); p.chmod(0o755)
-        self.env={**os.environ,'SSH_CLIENT_TEST_ROOT':str(self.root),'PATH':str(self.bin)+':'+str(ROOT/'.tools')+':'+os.environ['PATH']}
+        self.env={**os.environ,'SSH_CLIENT_TEST_ROOT':str(self.root),'PATH':str(self.bin)+':'+str(TOOL/'.tools')+':'+os.environ['PATH']}
         self.key=self.root/'key'
         subprocess.run(['ssh-keygen','-q','-t','ed25519','-N','','-f',str(self.key)],check=True)
         self.certs=self.root/'测试用户/minasCert'; self.certs.mkdir(parents=True)
@@ -181,7 +184,7 @@ class ClientTests(unittest.TestCase):
 
 class PackagingTests(unittest.TestCase):
     def test_three_entries_share_exact_worker(self):
-        worker=(ROOT/'restore-ssh.sh').read_bytes()
+        worker=(TOOL/'src/restore-ssh.sh').read_bytes()
         for name in ['xiaomi-storage-open-ssh-wsl.sh','install-ssh-autostart-fix.sh']:
             script=(ROOT/name).read_text()
             embedded=script.split("<<'MINAS_SSH_REPAIR_SH_SOURCE'\n",1)[1].split('\nMINAS_SSH_REPAIR_SH_SOURCE',1)[0]
@@ -190,7 +193,7 @@ class PackagingTests(unittest.TestCase):
         if plugin.is_file(): self.assertEqual(plugin.read_bytes(),worker)
     def test_shell_sources_parse(self):
         for script in ROOT.glob('*.sh'): subprocess.run(['bash','-n',str(script)],check=True)
-        subprocess.run(['/bin/sh','-n',str(ROOT/'restore-ssh.sh')],check=True)
+        subprocess.run(['/bin/sh','-n',str(TOOL/'src/restore-ssh.sh')],check=True)
     def test_help_needs_no_network_or_runtime_python(self):
         result=subprocess.run(['bash',str(ENTRY),'--help'],capture_output=True,text=True,timeout=5)
         self.assertEqual(result.returncode,0,result.stderr); self.assertIn('2.1.0',result.stdout)

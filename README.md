@@ -1,20 +1,46 @@
 # 小米智能存储 SSH 开启与开机恢复
 
-版本 **2.0.0**。[仓库](https://github.com/daixu0502/xiaomi-minas-tool-root)。SSH shell 入口可单文件运行，直接内嵌可阅读的 Python/Shell 源码，不使用 Base64 压缩包隐藏静态源码；内置修复程序与 SSH 恢复插件 1.1.0 保持一致。另附独立的 Docker bridge 网络出口修复工具。
+版本 **2.1.0**。[仓库](https://github.com/daixu0502/xiaomi-minas-tool-root)。SSH 入口基于 Scruel 的 [minas-enable-ssh_wsl.sh](https://github.com/scruel/xiaomi-storage-minas-tool/blob/main/minas-enable-ssh_wsl.sh) 认证和 WebDAV 引导流程改写，客户端及 NAS 开机恢复均不依赖 Python。源码直接以明文 heredoc 内嵌，无静态 Base64 包。
 
-## 开启或修复 SSH
+## 快速使用（WSL Ubuntu）
+
+已有可执行真实 root 命令的 SSH 时：
 
 ```bash
 bash xiaomi-storage-open-ssh-wsl.sh 192.168.31.100 --user u123456789
+# 只安装或更新开机修复，保留当前登录公钥：
+bash install-ssh-autostart-fix.sh 192.168.31.100
 ```
 
-WSL 脚本先检查公钥认证及真实 root 命令输出；正常时通过 SSH 修复，未开启时尝试原有的小米客户端证书引导。客户端需已登录，证书目录默认查找 Windows LocalAppData/minasCert，也可用 `--cert-dir` 指定。多个 NAS 账户时，已有 SSH 路径需用 `--user` 选择。
+开启脚本默认同时安装开机修复。唯一 NAS 账户自动选择；多个账户时可输入编号或完整账户名，无交互终端需传 `--user`。账户用于保存恢复公钥，不修改其他账户的配置。用 `--identity /home/你的WSL用户/.ssh/某私钥` 选择现有登录密钥。
 
-通过 `--identity` 选择现有密钥。保留私钥，以实际私钥导出的公钥为准；只有私钥和公钥都不存在时才生成 Ed25519 密钥。不输出或上传登录私钥，不修改 root 密码或 RPMB。HTTP 成功或 mi-shell 的退出码 0 都不会被当成 root 命令成功。
+如果旧版已提示“NAS 存在多个管理账户”，当次 SSH 实际已经通过 root 命令检查，直接指定 `--user` 即可，不需要强制旧证书路径。
 
-## 当前固件的 Portainer 路径
+### 依赖
 
-当前测试固件会强制进入 mi-shell，且未通过旧证书引导探测。因此新脚本同时提供已有 SSH、旧证书引导、Portainer 三条路径；不会把修复 mi-shell 的代码误当成获得 root 执行权限的入口。
+已有 SSH 路径需要 Bash、OpenSSH、awk、sort、sed 等基本工具。旧证书及 Portainer 路径另需 curl、jq；旧证书路径还需 openssl、timeout。Ubuntu 缺少时可安装：
+
+```bash
+sudo apt update
+sudo apt install openssh-client curl jq openssl coreutils
+```
+
+自动查询 Windows 证书目录使用 WSL 自带的 `wslpath` 和 Windows `powershell.exe`，明确输出 UTF-8，支持中文用户名。NAS 使用已有的 `/bin/sh`、systemd、Cron、flock、timeout、stat、awk、Dropbear 等原厂组件；mi-shell 固件还需原有 Bash。
+
+### 未开启过 SSH 的设备
+
+先登录小米 Windows 客户端，让证书写入 `%LOCALAPPDATA%/minasCert`，再运行开启脚本。默认先检查 SSH，不可用才走客户端证书引导。可显式指定证书目录：
+
+```bash
+bash xiaomi-storage-open-ssh-wsl.sh 192.168.31.100 \
+  --cert-dir /mnt/c/Users/Windows用户名/AppData/Local/minasCert
+# 只探测旧入口：临时写入并清理 UID 标记，不修改 SSH 或开机设置：
+bash xiaomi-storage-open-ssh-wsl.sh 192.168.31.100 --probe-bootstrap
+```
+
+脚本适配新固件的 SSH 修复，不代表能在所有新固件上首次取得 root 权限。当前已测试设备的新固件曾封堵旧引导，需已有 SSH 恢复插件或 Portainer 入口。`--legacy-bootstrap` 仅强制测试旧路径。HTTP 成功、mi-shell 退出码 0 均不能代表 SSH 已恢复。
+
+### Portainer 应急路径（纯 Shell）
 
 ```bash
 bash xiaomi-storage-open-ssh-wsl.sh 192.168.31.100 --portainer \
@@ -22,47 +48,56 @@ bash xiaomi-storage-open-ssh-wsl.sh 192.168.31.100 --portainer \
   --endpoint 3 --container test --user u123456789
 ```
 
-Portainer 密码交互输入，不作为命令行参数或写入文件。使用现有管理员权限，不新增服务或凭据；HTTP 仅用于可信局域网，已有 HTTPS 时使用对应 URL，不跳过证书验证。
+目标容器必须运行，并以可写 bind 方式绑定 NAS `/`（例如容器内 `/nas/home`）。脚本通过 Inspect 读取实际映射路径，不创建新容器。Portainer 密码交互输入；凭据只放在当前用户 0700 临时目录中的 0600 文件，不放进 curl 命令参数，完成后清理；HTTPS 验证证书，HTTP 仅用于可信局域网。
 
-目标容器须运行，并把宿主机 `/` 以可写 bind 方式映射到某个容器目录。脚本通过 Docker Inspect 确认映射并使用其实际位置，不假定 `/nas` 或 `/nas/home`。它先 chroot 准备文件，由宿主机一次性 Cron 激活 SSH；取得真实 SSH root 命令后安装开机恢复。不会创建特权容器或新镜像。缺少 Cron 时，排队状态不能当成成功。
+容器中通过 chroot 准备 Shell 修复文件；宿主机一次性 Cron 在下一分钟开始激活，最多等待开机检查 300 秒。任务开始即移除一次性 Cron，失败不形成永久重试。状态为 `/data/ssh-autostart-fix/shell-activation.status` 的 `pending`、`ready` 或 `failed`，日志使用 `ssh-autostart-fix` 标签。最终仍须通过客户端真实 root SSH 命令检查。
 
-未来固件若移除所有管理入口或必需组件，无法保证恢复，应提前保留至少一个管理入口。
+## 三个入口使用同一份开机修复代码
 
-## 更新开机修复
+- `xiaomi-storage-open-ssh-wsl.sh`：开启/修复 SSH，默认安装开机恢复。
+- `install-ssh-autostart-fix.sh`：已有正常 SSH 时安装/更新相同开机恢复，不新增公钥。
+- SSH 恢复插件 **1.1.7**：“安装 / 更新开机修复”使用同一份 `restore-ssh.sh`。
+
+插件源文件 `ssh-recovery-plugin/payload/system/restore-ssh.sh` 与本目录 `restore-ssh.sh` 保持完全一致；两个单文件脚本直接嵌入它。构建与测试校验逐字节一致。插件网页后台仍使用原有 Python API；其安装的开机 worker 与电脑端脚本均为 Shell。
+
+共同逻辑：等待 `minas.boot_check.service` 实际结束（最多 300 秒），恢复缺失的登录授权，兼容旧 `/root` 迁移到 `/home/rootx` 和新版 mi-shell，通过 Dropbear 私有挂载空间绑定原厂 Bash，最后每 5 秒复查 SSH，最多 12 次，随后退出。保留原厂 mi-shell 二进制、root 密码和其他账户。
+
+现有 `authorized_keys` 包括空文件都不会被旧快照覆盖；只在缺失时补回。更换或撤销公钥后重新运行安装脚本同步快照。删除 `/data/ssh-autostart-fix/login-authorized-keys` 可停止该缺失授权恢复。私钥只保存在电脑端，不上传 NAS；不存在私钥但已存在 `.pub` 时停止，避免误覆盖。
+
+### NAS 写入位置
+
+| 位置 | 用途 |
+|---|---|
+| `/home/rootx/.ssh/authorized_keys` | 合并新公钥，保留原有授权；旧 `/root` 的原有授权同步保留 |
+| `/etc/passwd` | 只调整 root 主目录，必要时将 mi-shell 登录 shell 改为 `/bin/sh`；原始副本在下述私有目录 |
+| `/data/ssh-autostart-fix/restore-ssh.sh` | 三个入口共用的纯 Shell 修复程序与开机 worker |
+| `/data/ssh-autostart-fix/login-authorized-keys` | 当前登录授权快照；仅补缺失文件 |
+| `/data/ssh-autostart-fix/host/dropbear_rsa_host_key` | 缺失时恢复 SSH 主机身份；已有密钥不会轮换 |
+| `/data/ssh-autostart-fix/passwd.before-shell-repair` | 首次修改前的 root 账户文件备份，0600 |
+| `/data/.minas-privileged/sshrecovery/keys/<账户>.pub` | 与插件共用的恢复公钥；仅开启脚本按所选账户写入 |
+| `/data/.minas-privileged/sshrecovery/operations.lock` | 与插件共用的互斥锁 |
+| `/etc/systemd/system/dropbear@.service.d/90-normal-shell.conf` | 新固件服务私有 Bash 映射 |
+| `/etc/systemd/system/minas.boot_check.service.d/90-keep-ssh.conf` | 开机检查完成后启动 SSH |
+| `/etc/cron.d/keep-ssh` | 开机运行有限复查 |
+| `/etc/cron.d/minas-shell-ssh-activate` | 仅 Portainer 离线路径的一次性激活任务 |
+| `/run/ssh-autostart-fix.lock` | 本次开机 worker 的互斥锁 |
+
+修复不修改 RPMB、root 密码，不重启 NAS、Docker 或已有 SSH 会话；新 SSH 会话使用更新后的 shell。不会写入参与原厂校验的插件源码目录。固件更新若删除配置或入口，仍可能需要通过保留的管理入口重新执行。
+
+### 检查与日志
 
 ```bash
-bash install-ssh-autostart-fix.sh 192.168.31.100
-```
-
-已有正常 root 命令行后运行。单文件内置 `recover-ssh.py` 和 `restore-ssh.sh`，保留原有等待真实开机检查与有限复查：最多等待 300 秒，每隔 5 秒复查 12 次，结束后退出。还会保存现有登录授权副本，仅在文件缺失时补回，并处理 mi-shell 固件。现有授权文件不会被旧副本覆盖。
-
-支持旧 `/root` 与新 `/home/rootx`。迁移时保留原有公钥、密码和其他账户；Bash 仅在 Dropbear 服务专用挂载空间中映射到 mi-shell，不替换原厂二进制、不重启设备。
-
-```bash
+bash xiaomi-storage-open-ssh-wsl.sh 192.168.31.100 --check
 ssh root@192.168.31.100 id
 ssh root@192.168.31.100 '/bin/sh /data/ssh-autostart-fix/restore-ssh.sh --check'
 ssh root@192.168.31.100 'journalctl -b -t ssh-autostart-fix --no-pager'
 ```
 
-修改或撤销公钥后，重新安装开机修复可同步副本。删除 `/data/ssh-autostart-fix/login-authorized-keys` 可停止缺失授权文件恢复。固件可能删除 systemd/Cron 配置，有限复查不意味着系统配置永久保留。
+`--check` 不安装开机修复、不生成密钥。测试通过不替代实际重启验证；本次更新不主动重启设备。
 
-## 离线工具和只读检查
+## 文件整理
 
-提前从 [SSH 恢复插件](https://github.com/daixu0502/xiaomi-minas-plugin-ssh_recovery) 下载应急包，或使用本仓库的 root 工具：
-
-```sh
-python3 recover-ssh.py --diagnose
-python3 recover-ssh.py --local-recover --user u123456789 --public-key ./my-key.pub --install-boot
-```
-
-在已映射宿主机根目录的容器中 chroot 执行同一程序，增加 `--offline`，可以通过宿主机一次性 Cron 激活。最终结果位于 `/data/ssh-autostart-fix/emergency-result.json`；`pending` 尚未完成，`ready` 表示服务已启动，最终仍须验证客户端真实 SSH 命令。
-
-```bash
-bash xiaomi-storage-open-ssh-wsl.sh 192.168.31.100 --check
-bash xiaomi-storage-open-ssh-wsl.sh 192.168.31.100 --probe-bootstrap
-```
-
-证书引导探测只创建并清理临时 UID 标记，不修改 SSH、账户或启动设置。旧认证引导参考 Scruel 的[原项目](https://github.com/scruel/xiaomi-storage-nas-enable-ssh)；新版保留此兼容路径，但不承诺已修复该入口的新固件仍能使用它。
+保留当前两个单文件入口、Shell 客户端源码、共享 worker、构建脚本、测试、固件参考和独立 Docker 工具。已删除被纯 Shell 替代的 `open_ssh_client.py`、`recover-ssh.py`；本地 `offline/` 是此前导出的旧版应急材料，继续本地保存，不作为新版入口、不上传。`.tools/` 仅为本地测试依赖，不收入源码或安装包。
 
 ## Docker bridge 网络出口修复
 
@@ -117,14 +152,14 @@ python3 -B /data/docker-bridge-repair/repair.py --rollback <事务编号>
 
 ```bash
 python3 build_release.py
-# 仅重新生成明文 SSH 开启入口，不同步或改动其他修复程序：
+# 只重新生成两个 SSH Shell 入口，不改动其他修复程序：
 python3 build_release.py --ssh-entrypoint-only
 python3 -B -m unittest discover -s tests -p 'test_*.py'
 ```
 
-单文件脚本由旁边的已审阅源码生成。测试核对内嵌程序逐字节一致，并覆盖假成功、超时、Portainer 挂载与 Docker 流协议。可通过仓库页面的 Code → Download ZIP 获取完整源码。
+Python 仅用于本地构建、回归测试，以及独立的 Docker bridge 网络工具；SSH 开启、安装开机修复及 NAS 开机恢复均为纯 Shell。测试核对两份单文件入口的 worker 与 SSH 恢复插件中的源码完全一致，覆盖假成功、多账户、中文证书目录、旧引导、Portainer TTY 执行、主目录迁移、授权保留及有限复查。
 
-`docker_bridge_repair.py` 是网络修复源码，`fix-docker-bridge.sh` 是生成的单文件入口，回归测试在 `tests/test_docker_bridge.py`。测试使用隔离文件和模拟命令，不修改本机或 NAS 网络。
+`docker_bridge_repair.py` 是独立网络修复源码，`fix-docker-bridge.sh` 是其生成入口，测试在 `tests/test_docker_bridge.py`。测试使用隔离文件和模拟命令，不修改本机或 NAS 网络。
 
 ## 获取源码
 

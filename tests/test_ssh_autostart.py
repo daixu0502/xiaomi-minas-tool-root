@@ -17,7 +17,9 @@ now = int((root / "uptime").read_text().split()[0])
 cmd, *args = sys.argv[1:]
 with (root / "calls").open("a") as output:
     output.write(json.dumps([now, cmd, args]) + "\n")
-if cmd == "sleep":
+if cmd == "materials":
+    sys.exit(1 if cfg.get("repair_fails") else 0)
+elif cmd == "sleep":
     later = now + int(args[0])
     (root / "uptime").write_text(f"{later} 0\n")
     if now < cfg.get("close_at", -1) <= later:
@@ -59,7 +61,8 @@ class WorkerTests(unittest.TestCase):
         self.mock.write_text(MOCK)
         self.mock.chmod(0o755)
         source = INSTALLER.read_text()
-        worker = source.split("<<'SSH_RESTORE_WORKER'\n", 1)[1].split("\nSSH_RESTORE_WORKER", 1)[0]
+        worker = source.split("<<'MINAS_SSH_REPAIR_SH_SOURCE'\n", 1)[1].split("\nMINAS_SSH_REPAIR_SH_SOURCE", 1)[0]
+        worker = worker.replace('timeout 30 /bin/sh "$0" --boot-repair', f"{self.mock} materials")
         worker = worker.replace("/usr/bin/systemctl", f"{self.mock} systemctl")
         worker = worker.replace("logger -t", f"{self.mock} logger -t")
         worker = worker.replace('sleep "$', f'{self.mock} sleep "$')
@@ -141,6 +144,11 @@ class WorkerTests(unittest.TestCase):
         self.assertFalse((self.root / "lock").exists())
         result = self.run_worker(probe=True, active=True)
         self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_material_repair_failure_does_not_start_socket(self):
+        result = self.run_worker(repair_fails=True)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(self.calls("start"), [])
 
     def test_overlapping_worker_skips(self):
         with (self.root / "lock").open("w") as lock:

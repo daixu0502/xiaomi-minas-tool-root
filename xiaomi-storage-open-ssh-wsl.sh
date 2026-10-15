@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Xiaomi NAS SSH 2.1.0. Protocol adapted from Scruel's minas-enable-ssh_wsl.sh:
+# Xiaomi NAS SSH 2.1.1. Protocol adapted from Scruel's minas-enable-ssh_wsl.sh:
 # https://github.com/scruel/xiaomi-storage-minas-tool/blob/main/minas-enable-ssh_wsl.sh
 # Requires existing administrator authority; never modifies RPMB or root passwords.
 set -Eeuo pipefail
@@ -9,7 +9,7 @@ need() { local tool; for tool in "$@"; do command -v "$tool" >/dev/null || fail 
 usage() {
     if [[ ${BOOT_ONLY:-0} == 1 ]]; then
         cat <<'INSTALL_HELP'
-小米 NAS 纯 Shell 开机修复安装器 2.1.0
+小米 NAS 纯 Shell 开机修复安装器 2.1.1
 用法：bash install-ssh-autostart-fix.sh [NAS IPv4] [--identity 私钥路径]
 需要已能通过公钥执行真实 root SSH 命令；不新增登录公钥。
 安装与 SSH 恢复插件相同的开机 worker，不重启 NAS。
@@ -18,7 +18,7 @@ INSTALL_HELP
         return
     fi
     cat <<'HELP'
-小米 NAS SSH 开启与开机修复 2.1.0（纯 Shell）
+小米 NAS SSH 开启与开机修复 2.1.1（纯 Shell）
 用法：bash xiaomi-storage-open-ssh-wsl.sh [NAS IPv4] [选项]
   --user u数字            保存恢复公钥的 NAS 账户；多账户可交互选择
   --identity 路径         WSL 私钥路径（默认 ~/.ssh/id_ed25519）
@@ -421,7 +421,7 @@ make_payload() {
         printf '#!/bin/sh\nset -eu\numask 077\nstage=$(mktemp -d /tmp/minas-ssh-shell.XXXXXXXX)\n'
         printf 'trap '\''rm -rf -- "$stage"'\'' EXIT\n'
         printf 'cat > "$stage/restore-ssh.sh" <<'\''MINAS_REMOTE_REPAIR_SOURCE'\''\n'
-        cat "$STAGE/restore-ssh.sh"; printf '\nMINAS_REMOTE_REPAIR_SOURCE\n'
+        cat "$STAGE/restore-ssh.sh"; printf 'MINAS_REMOTE_REPAIR_SOURCE\n'
         printf 'cat > "$stage/public.key" <<'\''MINAS_REMOTE_PUBLIC_KEY'\''\n'
         cat "$STAGE/public.key"; printf '\nMINAS_REMOTE_PUBLIC_KEY\n'
         printf '/bin/sh "$stage/restore-ssh.sh" %s --worker "$stage/restore-ssh.sh"' "$mode"

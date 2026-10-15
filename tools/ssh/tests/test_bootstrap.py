@@ -72,6 +72,8 @@ class ClientTests(unittest.TestCase):
         result=self.run_client('--user','u456'); self.assertEqual(result.returncode,0,result.stderr)
         payload=(self.root/'payload').read_text()
         self.assertIn('--recover --worker "$stage/restore-ssh.sh" --user u456',payload)
+        installed=payload.split("<<'MINAS_REMOTE_REPAIR_SOURCE'\n",1)[1].split('\nMINAS_REMOTE_REPAIR_SOURCE\n',1)[0]+'\n'
+        self.assertEqual(installed.encode(),(TOOL/'src/restore-ssh.sh').read_bytes())
         self.assertNotIn('python',payload.lower()); self.assertFalse(self.calls('curl'))
     def test_multiple_accounts_require_user_without_terminal(self):
         result=self.run_client(); self.assertNotEqual(result.returncode,0); self.assertIn('--user',result.stderr)
@@ -196,6 +198,6 @@ class PackagingTests(unittest.TestCase):
         subprocess.run(['/bin/sh','-n',str(TOOL/'src/restore-ssh.sh')],check=True)
     def test_help_needs_no_network_or_runtime_python(self):
         result=subprocess.run(['bash',str(ENTRY),'--help'],capture_output=True,text=True,timeout=5)
-        self.assertEqual(result.returncode,0,result.stderr); self.assertIn('2.1.0',result.stdout)
+        self.assertEqual(result.returncode,0,result.stderr); self.assertIn('2.1.1',result.stdout)
 
 if __name__=='__main__': unittest.main()

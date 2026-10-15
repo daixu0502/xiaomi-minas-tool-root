@@ -1,6 +1,8 @@
 # 小米智能存储 SSH 开启与开机恢复
 
-版本 **2.1.0**。[仓库](https://github.com/daixu0502/xiaomi-minas-tool-root)。SSH 入口基于 Scruel 的 [minas-enable-ssh_wsl.sh](https://github.com/scruel/xiaomi-storage-minas-tool/blob/main/minas-enable-ssh_wsl.sh) 认证和 WebDAV 引导流程改写，客户端及 NAS 开机恢复均不依赖 Python。源码直接以明文 heredoc 内嵌，无静态 Base64 包。
+版本 **2.1.1**。[仓库](https://github.com/daixu0502/xiaomi-minas-tool-root)。SSH 入口基于 Scruel 的 [minas-enable-ssh_wsl.sh](https://github.com/scruel/xiaomi-storage-minas-tool/blob/main/minas-enable-ssh_wsl.sh) 认证和 WebDAV 引导流程改写，客户端及 NAS 开机恢复均不依赖 Python。源码直接以明文 heredoc 内嵌，无静态 Base64 包。
+
+2.1.1 修复远端脚本传输额外添加末尾空行的问题；同版本安装结果与插件 worker 字节一致，旧版仅多末尾空行的安装也可被 SSH 恢复插件 1.1.8 识别。
 
 ## 快速使用（WSL Ubuntu）
 
@@ -56,7 +58,7 @@ bash xiaomi-storage-open-ssh-wsl.sh 192.168.31.100 --portainer \
 
 - `xiaomi-storage-open-ssh-wsl.sh`：开启/修复 SSH，默认安装开机恢复。
 - `install-ssh-autostart-fix.sh`：已有正常 SSH 时安装/更新相同开机恢复，不新增公钥。
-- SSH 恢复插件 **1.1.7**：“安装 / 更新开机修复”使用同一份 `restore-ssh.sh`。
+- SSH 恢复插件 **1.1.8**：“安装 / 更新开机修复”使用同一份 `restore-ssh.sh`。
 
 插件源文件 `ssh-recovery-plugin/payload/system/restore-ssh.sh` 与 `tools/ssh/src/restore-ssh.sh` 保持完全一致；两个单文件脚本直接嵌入它。构建与测试校验逐字节一致。插件网页后台仍使用原有 Python API；其安装的开机 worker 与电脑端脚本均为 Shell。
 
